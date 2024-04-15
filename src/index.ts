@@ -8,3 +8,7 @@ app.use(Express.json());
 connectToDatabase();
 
 app.listen(5000, () => console.log("Server has started..."));
+
+app.post("", (req: Request, res: Response) => {
+  return res.send("Welcome to client portal API");
+});
