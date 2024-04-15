@@ -1,0 +1,10 @@
+import Express, { Response, Request } from "express";
+import cors from "cors";
+import connectToDatabase from "./config/database-config";
+const app = Express();
+app.use(cors());
+app.use(Express.json());
+
+connectToDatabase();
+
+app.listen(5000, () => console.log("Server has started..."));
