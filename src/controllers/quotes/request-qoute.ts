@@ -6,6 +6,16 @@ class QuotesController {
     try {
       const { model, reqNumber, value, use, yearOfManufacture } = req;
 
+      const currentYear = new Date(Date.now()).getFullYear();
+      let error = "";
+      if (yearOfManufacture < 2008) {
+        error = "Year of manufucture cannot be more than 15 years!";
+      } else if (yearOfManufacture > currentYear) {
+        error = "Year of manufacture cannot be future!!";
+      }
+      if (error.length > 1) {
+        return res.status(400).json({ error: error });
+      }
       const premium = value * 3.4;
       const stamp_duty = 40;
       const trainning_levy = premium * 0.2;
