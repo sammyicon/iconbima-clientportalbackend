@@ -8,7 +8,7 @@ class QuotesController {
 
       const currentYear = new Date(Date.now()).getFullYear();
       let error = "";
-      if (yearOfManufacture < 2008) {
+      if (currentYear - yearOfManufacture > 15) {
         error = "Year of manufucture cannot be more than 15 years!";
       } else if (yearOfManufacture > currentYear) {
         error = "Year of manufacture cannot be future!!";
