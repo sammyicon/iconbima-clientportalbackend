@@ -1,8 +1,7 @@
 export interface IMotor {
   model: string;
   reqNumber: string;
-  startDate: string;
-  endDate: string;
+  value: number;
   yearOfManufacture: number;
   use: string;
 }
