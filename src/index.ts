@@ -3,6 +3,7 @@ import cors from "cors";
 import connectToDatabase from "./config/database-config";
 import quoteRouter from "./routes/quote-route";
 import { config } from "dotenv";
+import userRouter from "./routes/user-route";
 
 const app = Express();
 app.use(cors());
@@ -20,3 +21,4 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use("/request", quoteRouter);
+app.use("/user", userRouter);
