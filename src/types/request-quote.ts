@@ -6,3 +6,10 @@ export interface IMotor {
   yearOfManufacture: number;
   use: string;
 }
+
+export interface INonMotor {
+  address: string;
+  city: string;
+  purpose: string;
+  products: string;
+}
