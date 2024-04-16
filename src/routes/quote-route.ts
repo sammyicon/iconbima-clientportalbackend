@@ -7,7 +7,7 @@ quoteRouter.post("/motor", (req: Request, res: Response) => {
   quoteController.requestMotorQuote(req.body, res);
 });
 quoteRouter.post("/non-motor", (req: Request, res: Response) => {
-  quoteController.requestMotorQuote(req.body, res);
+  quoteController.requestNonMotorQuote(req.body, res);
 });
 
 export default quoteRouter;
