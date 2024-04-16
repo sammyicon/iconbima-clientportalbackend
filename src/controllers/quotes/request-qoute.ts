@@ -24,7 +24,7 @@ class QuotesController {
         },
       ];
 
-      return res.status(200).json({ response: response });
+      return res.status(200).json({ success: true, response: response });
     } catch (error) {
       console.error(error);
       return res.status(500).json(error);
