@@ -23,7 +23,6 @@ class QuotesController {
       const trainning_levy = (premium * 0.2) / 100;
       const PHCfund = (value * 0.25) / 100;
       const totalPremium = premium + stamp_duty + trainning_levy + PHCfund;
-
       const response = [
         {
           model,

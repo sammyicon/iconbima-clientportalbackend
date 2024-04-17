@@ -20,5 +20,7 @@ app.get("/", (req: Request, res: Response) => {
   return res.status(200).json({ success: true, message: "API is live" });
 });
 
+console.log("hello");
+
 app.use("/request", quoteRouter);
 app.use("/user", userRouter);
