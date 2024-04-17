@@ -3,8 +3,6 @@ import { IMotor, INonMotor, IQuote, IUser } from "../../types";
 import MotorQuoteModel from "../../models/Quotes";
 import UserModel from "../../models/User";
 
-type UserQuote = Pick<IUser, "email">;
-
 class QuotesController {
   async requestMotorQuote(req: IMotor, res: Response) {
     try {
@@ -20,10 +18,10 @@ class QuotesController {
       if (error.length > 1) {
         return res.status(400).json({ error: error });
       }
-      const premium = value * 3.4;
+      const premium = (value * 3.4) / 100;
       const stamp_duty = 40;
-      const trainning_levy = premium * 0.2;
-      const PHCfund = value * 0.25;
+      const trainning_levy = (premium * 0.2) / 100;
+      const PHCfund = (value * 0.25) / 100;
 
       const response = [
         {
