@@ -18,11 +18,13 @@ class QuotesController {
       if (error.length > 1) {
         return res.status(400).json({ error: error });
       }
-      const premium = (value * 3.4) / 100;
+      const premium = Math.round((value * 3.4) / 100);
       const stamp_duty = 40;
-      const trainning_levy = (premium * 0.2) / 100;
-      const PHCfund = (value * 0.25) / 100;
-      const totalPremium = premium + stamp_duty + trainning_levy + PHCfund;
+      const trainning_levy = Math.round((premium * 0.2) / 100);
+      const PHCfund = Math.round((value * 0.25) / 100);
+      const totalPremium = Math.round(
+        premium + stamp_duty + trainning_levy + PHCfund
+      );
       let days = 0;
       if (currentYear % 4 === 0) {
         days += 366;
