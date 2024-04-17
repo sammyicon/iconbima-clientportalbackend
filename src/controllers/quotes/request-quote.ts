@@ -23,6 +23,13 @@ class QuotesController {
       const trainning_levy = (premium * 0.2) / 100;
       const PHCfund = (value * 0.25) / 100;
       const totalPremium = premium + stamp_duty + trainning_levy + PHCfund;
+      let days = 0;
+      if (currentYear % 4 === 0) {
+        days += 366;
+      } else {
+        days += 365;
+      }
+
       const response = [
         {
           model,
@@ -34,6 +41,7 @@ class QuotesController {
           trainning_levy,
           PHCfund,
           totalPremium,
+          days,
         },
       ];
 
