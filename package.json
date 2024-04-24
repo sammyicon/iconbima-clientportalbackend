@@ -2,7 +2,7 @@
   "name": "client-portal-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "dependencies": {
     "@types/axios": "^0.14.0",
     "@types/bcrypt": "^5.0.2",
@@ -19,6 +19,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.5.0",
     "mongoose": "^8.3.1",
     "nodemon": "^3.1.0",
     "oracledb": "^6.4.0",
@@ -27,7 +28,10 @@
   },
   "devDependencies": {},
   "scripts": {
-    "start": "nodemon --exec ts-node src/index.ts"
+   "dev:build": "tsc -w",
+    "dev:run": "nodemon dist/index.js",
+    "dev": "concurrently npm:dev:*",
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",

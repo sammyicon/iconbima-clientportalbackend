@@ -1,16 +1,15 @@
 import Express, { Response, Request } from "express";
 import cors from "cors";
-import connectToDatabase from "./config/database-config";
 import quoteRouter from "./routes/quote-route";
 import { config } from "dotenv";
 import userRouter from "./routes/user-route";
+import policyRouter from "./routes/policy-routes";
+import claimsRouter from "./routes/claims-routes";
 
 const app = Express();
 app.use(cors());
 app.use(Express.json());
 config();
-
-connectToDatabase();
 
 const port = process.env.PORT as number | string;
 
@@ -21,4 +20,6 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use("/request", quoteRouter);
+app.use("/policies", policyRouter);
+app.use("/claims", claimsRouter);
 app.use("/user", userRouter);

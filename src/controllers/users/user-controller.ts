@@ -1,52 +1,56 @@
-import { Response } from "express";
-import { IUser } from "../../types";
-import UserModel from "../../models/User";
-import passHash from "../../helpers/passHash";
+import { Request, Response } from "express";
+
+import pool from "../../config/oracledb-connect";
 import createToken from "../../helpers/jwt";
 
-type ILogin = Pick<IUser, "email" | "password">;
-
 class UserController {
-  async createUser(req: IUser, res: Response) {
+  async userLogin(req: Request, res: Response) {
+    let connection;
+    let result: any;
     try {
-      const { address, email, fullName, password, phoneNumber } = req;
-      const existingUser = await UserModel.findOne({ email: email });
-      if (existingUser) {
-        return res.status(400).json({ error: `${email} already exists!` });
+      const { ent_code } = req.body;
+      connection = (await pool).getConnection();
+      console.log("connected to the database");
+      result = (await connection).execute(
+        `SELECT ent_aent_code,
+       ent_code,
+       ent_name,
+       ent_type
+      FROM all_entity
+       WHERE ent_status = 'ACTIVE' and ent_code = :ent_code `,
+        { ent_code: ent_code }
+      );
+
+      if ((await result).rows && (await result).rows.length > 0) {
+        const formattedData = (await result).rows?.map((row: any) => ({
+          intermediaryCode: row[0],
+          entityCode: row[1],
+          entityName: row[2],
+          entityType: row[3],
+        }));
+        const token = createToken(formattedData[0]);
+        res.json({
+          success: true,
+          message: "Login successful!",
+          accessToken: token,
+        });
+      } else {
+        res
+          .status(401)
+          .json({ success: false, message: "Invalid entity code" });
       }
-      const hashPassword = await passHash.encrypt(password);
-      const newUser = new UserModel({
-        address,
-        email,
-        fullName,
-        password: hashPassword,
-        phoneNumber,
-      });
-      await newUser.save();
-      return res
-        .status(200)
-        .json({ success: true, message: "User created successfully" });
     } catch (error) {
       console.error(error);
-      return res.status(500).json(error);
-    }
-  }
-  async userLogin(req: ILogin, res: Response) {
-    try {
-      const { email, password } = req;
-      const findUser = await UserModel.findOne({ email: email });
-      if (!findUser) {
-        return res.status(400).json({ error: `${email} does not exist!` });
+      res.status(500).json({ success: false, message: "An error occurred" });
+    } finally {
+      try {
+        if (connection) {
+          (await connection).close();
+          console.info("Connection closed successfully");
+        }
+      } catch (error) {
+        console.error(error);
       }
-      const isValidPass = await passHash.compare(password, findUser.password);
-      if (!isValidPass) {
-        return res.status(401).json({ error: "Invalid password! " });
-      }
-      const token = createToken(findUser);
-      return res.status(200).json({ success: true, access_token: token });
-    } catch (error) {
-      console.error(error);
-      return res.status(200).json(error);
     }
   }
 }

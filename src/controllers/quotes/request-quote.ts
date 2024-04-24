@@ -36,6 +36,7 @@ class QuotesController {
         {
           model,
           reqNumber,
+          value,
           use,
           yearOfManufacture,
           premium,
