@@ -5,6 +5,7 @@ import { config } from "dotenv";
 import userRouter from "./routes/user-route";
 import policyRouter from "./routes/policy-routes";
 import claimsRouter from "./routes/claims-routes";
+import premiumsRouter from "./routes/premiums-routes";
 
 const app = Express();
 app.use(cors());
@@ -22,4 +23,5 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/request", quoteRouter);
 app.use("/policies", policyRouter);
 app.use("/claims", claimsRouter);
+app.use("/premiums", premiumsRouter);
 app.use("/user", userRouter);
