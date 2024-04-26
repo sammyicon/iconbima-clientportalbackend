@@ -6,6 +6,8 @@ import userRouter from "./routes/user-route";
 import policyRouter from "./routes/policy-routes";
 import claimsRouter from "./routes/claims-routes";
 import premiumsRouter from "./routes/premiums-routes";
+import arReceiptsRouter from "./routes/ARreceipts-routes";
+import premiumReportsRouter from "./routes/premiumReports-routes";
 
 const app = Express();
 app.use(cors());
@@ -24,4 +26,6 @@ app.use("/request", quoteRouter);
 app.use("/policies", policyRouter);
 app.use("/claims", claimsRouter);
 app.use("/premiums", premiumsRouter);
+app.use("/ARreceipts", arReceiptsRouter);
+app.use("/premiumReports", premiumReportsRouter);
 app.use("/user", userRouter);

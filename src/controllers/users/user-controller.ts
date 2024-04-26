@@ -15,9 +15,12 @@ class UserController {
         `SELECT ent_aent_code,
        ent_code,
        ent_name,
-       ent_type
-      FROM all_entity
-       WHERE ent_status = 'ACTIVE' and ent_code = :ent_code `,
+       ent_type,
+       ENT_EMAIL,
+       ENT_CELLPHONE,
+       b.AENT_NAME
+  FROM all_entity a, ALL_ENTITY_CATG b
+ WHERE ent_status = 'ACTIVE' AND ent_code = :ent_code and ent_aent_code = b.AENT_CODE`,
         { ent_code: ent_code }
       );
 
@@ -27,6 +30,9 @@ class UserController {
           entityCode: row[1],
           entityName: row[2],
           entityType: row[3],
+          entityEmail: row[4],
+          entityPhone: row[5],
+          entityCodeName: row[6],
         }));
         const token = createToken(formattedData[0]);
         res.json({
