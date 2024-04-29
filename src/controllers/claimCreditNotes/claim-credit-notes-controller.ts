@@ -1,6 +1,7 @@
 import { Response, Request } from "express";
 import pool from "../../config/oracledb-connect";
-
+import { config } from "dotenv";
+config();
 class ClaimCreditNotesController {
   async getClaimCreditNotes(req: Request, res: Response) {
     let connection;
@@ -89,6 +90,7 @@ class ClaimCreditNotesController {
       }
       if ((await results).rows && (await results).rows.length > 0) {
         const formattedData = (await results).rows?.map((row: any) => ({
+          receiptIndex: row[2],
           journalNo: row[1],
           glDate: row[6],
           status: row[15],
@@ -98,6 +100,7 @@ class ClaimCreditNotesController {
           type: row[13],
           posted: row[16],
           narration: row[5],
+          receiptUrl: `${process.env.INTRA_REPORT_URL}/reports/rwservlet?userid=icon/IC0N@bima19c&module=D:/icon/forms_version/ap/reports/mayfair_ke/AP_CR_NOTE&rep_doc_no=${row[1]}&p_os_code=01&p_role_code=GL.MGR&rep_param8=&p_grp_code=GL.MGR&rep_param1=&p_module_name=AP_CR_NOTE&p_org_code=50&p_menu_code=GL000003&rep_param6=&rep_param5=&p_report_title=CLAIMS%20CREDIT%20NOTE&rep_param3=&p_user_name=ICON,%20Admin%20&rep_doc_index=${row[2]}&p_user_code=1000000&rep_param7=&destype=cache&rep_doc_org=50&rep_param2=&desformat=PDF&rep_param9=&rep_param4=&`,
         }));
         res.json({
           success: true,
