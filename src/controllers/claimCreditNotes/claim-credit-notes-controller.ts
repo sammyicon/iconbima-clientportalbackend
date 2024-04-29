@@ -48,7 +48,7 @@ class ClaimCreditNotesController {
           and b.LN_AENT_CODE=nvl(:intermediaryCode,b.LN_AENT_CODE)
           and b.LN_ENT_CODE = nvl(:clientCode,b.LN_ENT_CODE)
           and hd_type='CREDIT NOTE'
-          and hd_no = b.LN_HD_NO`,
+          and hd_no = b.LN_HD_NO and hd_posted = 'Y'`,
           { intermediaryCode, clientCode, org_code: "50" }
         );
       } else {
@@ -84,7 +84,7 @@ class ClaimCreditNotesController {
          and b.LN_LINK_AENT_CODE=nvl(:intermediaryCode,b.LN_LINK_AENT_CODE)
          and b.LN_LINK_ENT_CODE = nvl(:clientCode,b.LN_LINK_ENT_CODE)
          and hd_type='CREDIT NOTE'
-         and hd_no = b.LN_HD_NO`,
+         and hd_no = b.LN_HD_NO and hd_posted ='Y'`,
           { intermediaryCode, clientCode, org_code: "50" }
         );
       }
@@ -106,6 +106,8 @@ class ClaimCreditNotesController {
           success: true,
           results: formattedData,
         });
+      } else {
+        return res.status(200).json({ success: false, results: [] });
       }
     } catch (error) {
       console.error(error);

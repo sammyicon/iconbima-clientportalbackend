@@ -191,6 +191,8 @@ ORDER BY hd_gl_date`,
           success: true,
           results: formattedData,
         });
+      } else {
+        return res.status(200).json({ success: false, results: [] });
       }
     } catch (error) {
       console.error(error);

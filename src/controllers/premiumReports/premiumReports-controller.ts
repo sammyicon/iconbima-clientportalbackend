@@ -793,6 +793,8 @@ ORDER BY pr_org_code, pr_pl_index, pr_end_index`,
           success: true,
           results: formattedData,
         });
+      } else {
+        return res.status(200).json({ success: false, results: [] });
       }
     } catch (error) {
       console.error(error);
