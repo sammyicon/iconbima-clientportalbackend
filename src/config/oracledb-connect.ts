@@ -1,9 +1,12 @@
 import OracleDB from "oracledb";
+import { config } from "dotenv";
+
+config();
 
 export const pool = OracleDB.createPool({
-  user: "ICON",
-  password: "B1MA",
-  connectionString: "192.168.0.126:1527/BIMA19C",
+  user: process.env.INTRA_USER,
+  password: process.env.INTRA_PASSWORD,
+  connectionString: process.env.INTRA_CONN_STRING,
   poolMin: 5,
   poolMax: 100,
   poolIncrement: 5,
