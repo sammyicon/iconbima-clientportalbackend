@@ -10,6 +10,7 @@ import arReceiptsRouter from "./routes/ARreceipts-routes";
 import premiumReportsRouter from "./routes/premiumReports-routes";
 import claimCreditNotesRouter from "./routes/claimCreditNotes-route";
 import receiptsRouter from "./routes/receipts-routes";
+import claimDebitsRouter from "./routes/claimDebits-route";
 
 const app = Express();
 app.use(cors());
@@ -31,5 +32,6 @@ app.use("/premiums", premiumsRouter);
 app.use("/ARreceipts", arReceiptsRouter);
 app.use("/premiumReports", premiumReportsRouter);
 app.use("/claimCreditNotes", claimCreditNotesRouter);
+app.use("/claimDebits", claimDebitsRouter);
 app.use("/receipts", receiptsRouter);
 app.use("/user", userRouter);

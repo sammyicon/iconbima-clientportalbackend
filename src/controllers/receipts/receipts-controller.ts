@@ -190,7 +190,7 @@ class ReceiptsController {
           receiptNo: row[2],
           from: row[4],
           narration: row[12],
-          amount: row[21],
+          amount: String(row[21]),
           GLDate: row[13],
           receiptMode: row[8],
           status: row[39],

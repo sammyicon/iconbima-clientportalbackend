@@ -16,7 +16,7 @@ class ClaimsController {
         intermediaryCode === "25"
       ) {
         results = (await connection).execute(
-          `SELECT a.cm_org_code,      
+          `SELECT c.AI_REGN_NO,  a.cm_org_code,      
          a.cm_index,      
          a.cm_cd_code,      
          a.cm_pl_index,      
@@ -98,7 +98,7 @@ class ClaimsController {
          pkg_system_admin.get_user_name (a.created_by)      
              created_by_xx,    
          pkg_system_admin.get_system_desc ('RGBA_StatusValues', a.cm_status)  rgba_status                  
-    FROM cm_claims a, cm_claims_risks b      
+    FROM cm_claims a, cm_claims_risks b   , ai_vehicle c   
    WHERE     a.cm_org_code = :org_code      
          AND a.cm_org_code = b.cr_org_code(+)      
          AND a.cm_index = b.cr_cm_index(+)      
@@ -106,7 +106,8 @@ class ClaimsController {
          AND a.CM_INT_AENT_CODE = NVL ( :aent_code, a.CM_INT_AENT_CODE)      
          AND a.CM_INT_ENT_CODE = NVL ( :ent_code, a.CM_INT_ENT_CODE)    
          AND (case when :exclude_cm_index is not null then :exclude_cm_index else '-1' end) != cm_index    
-         AND a.cm_status != 'ToDelete'      
+         AND a.cm_status != 'ToDelete'   
+         and c.AI_PL_INDEX = a.CM_PL_INDEX    
 ORDER BY a.created_on DESC`,
           {
             org_code: "50",
@@ -118,7 +119,7 @@ ORDER BY a.created_on DESC`,
         );
       } else {
         results = (await connection).execute(
-          `SELECT a.cm_org_code,      
+          `SELECT c.AI_REGN_NO, a.cm_org_code,      
          a.cm_index,      
          a.cm_cd_code,      
          a.cm_pl_index,      
@@ -200,7 +201,7 @@ ORDER BY a.created_on DESC`,
          pkg_system_admin.get_user_name (a.created_by)      
              created_by_xx,    
          pkg_system_admin.get_system_desc ('RGBA_StatusValues', a.cm_status)  rgba_status                  
-    FROM cm_claims a, cm_claims_risks b      
+    FROM cm_claims a, cm_claims_risks b, ai_vehicle c     
    WHERE     a.cm_org_code = :org_code      
          AND a.cm_org_code = b.cr_org_code(+)      
          AND a.cm_index = b.cr_cm_index(+)      
@@ -208,7 +209,8 @@ ORDER BY a.created_on DESC`,
          AND a.cm_aent_code = NVL ( :aent_code, a.cm_aent_code)      
          AND a.cm_ent_code = NVL ( :ent_code, a.cm_ent_code)    
          AND (case when :exclude_cm_index is not null then :exclude_cm_index else '-1' end) != cm_index    
-         AND a.cm_status != 'ToDelete'      
+         AND a.cm_status != 'ToDelete'  
+         and c.AI_PL_INDEX = a.CM_PL_INDEX     
 ORDER BY a.created_on DESC`,
           {
             org_code: "50",
@@ -222,16 +224,17 @@ ORDER BY a.created_on DESC`,
 
       if ((await results).rows && (await results).rows.length > 0) {
         const formattedData = (await results).rows?.map((row: any) => ({
-          claimNumber: row[5],
-          policyNumber: row[6],
-          lossDate: row[7],
-          intimationDate: row[12],
-          currency: row[14],
-          insured: row[25],
-          intermediary: row[28],
-          status: row[29],
-          total: row[33],
-          paid: row[34],
+          carRegNo: row[0],
+          claimNumber: row[6],
+          policyNumber: row[7],
+          lossDate: row[8],
+          intimationDate: row[13],
+          currency: row[15],
+          insured: row[29],
+          intermediary: row[26],
+          status: row[30],
+          total: row[34],
+          paid: row[35],
         }));
         res.json({
           success: true,
