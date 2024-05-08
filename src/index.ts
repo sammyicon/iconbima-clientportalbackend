@@ -11,6 +11,9 @@ import premiumReportsRouter from "./routes/premiumReports-routes";
 import claimCreditNotesRouter from "./routes/claimCreditNotes-route";
 import receiptsRouter from "./routes/receipts-routes";
 import claimDebitsRouter from "./routes/claimDebits-route";
+import commissionPaybleRouter from "./routes/commisionpayble-routes";
+import glStatementsRouter from "./routes/gl-statements-routes";
+import upcomingRenewalsRouter from "./routes/upcoming-renewals-routes";
 
 const app = Express();
 app.use(cors());
@@ -34,4 +37,7 @@ app.use("/premiumReports", premiumReportsRouter);
 app.use("/claimCreditNotes", claimCreditNotesRouter);
 app.use("/claimDebits", claimDebitsRouter);
 app.use("/receipts", receiptsRouter);
+app.use("/commissionPayble", commissionPaybleRouter);
+app.use("/glStatements", glStatementsRouter);
+app.use("/upcomingRenewals", upcomingRenewalsRouter);
 app.use("/user", userRouter);

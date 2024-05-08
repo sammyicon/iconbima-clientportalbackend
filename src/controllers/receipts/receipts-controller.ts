@@ -1,6 +1,7 @@
 import { Response, Request } from "express";
 import pool from "../../config/oracledb-connect";
 import { config } from "dotenv";
+import { getReportConfig } from "../../config/report-config";
 config();
 
 class ReceiptsController {
@@ -184,6 +185,7 @@ class ReceiptsController {
           { intermediaryCode, clientCode, p_org_code: "50" }
         );
       }
+      const REPORT_URL = getReportConfig();
       if ((await results).rows && (await results).rows.length > 0) {
         const formattedData = (await results).rows?.map((row: any) => ({
           reportIndex: row[1],
@@ -195,7 +197,7 @@ class ReceiptsController {
           receiptMode: row[8],
           status: row[39],
           posted: row[37],
-          receiptUrl: `${process.env.INTRA_REPORT_URL}/reports/rwservlet?userid=icon/IC0N@bima19c&module=D:/icon/forms_version/ar/reports/mayfair_ke/AR_E_RECEIPT&rep_doc_no=${row[2]}&p_os_code=01&p_role_code=AR.MGR&rep_param8=&p_grp_code=AR.MGR&rep_param1=&p_module_name=AR_E_RECEIPT&p_org_code=50&p_menu_code=AR000001&rep_param6=&rep_param5=&p_report_title=E RECEIPT&rep_param3=&p_user_name=ICON, Admin &rep_doc_index=${row[1]}&p_user_code=1000000&rep_param7=&destype=cache&rep_doc_org=50&rep_param2=&desformat=PDF&rep_param9=&rep_param4=&`,
+          receiptUrl: `${REPORT_URL}/reports/rwservlet?userid=icon/IC0N@bima19c&module=D:/icon/forms_version/ar/reports/mayfair_ke/AR_E_RECEIPT&rep_doc_no=${row[2]}&p_os_code=01&p_role_code=AR.MGR&rep_param8=&p_grp_code=AR.MGR&rep_param1=&p_module_name=AR_E_RECEIPT&p_org_code=50&p_menu_code=AR000001&rep_param6=&rep_param5=&p_report_title=E RECEIPT&rep_param3=&p_user_name=ICON, Admin &rep_doc_index=${row[1]}&p_user_code=1000000&rep_param7=&destype=cache&rep_doc_org=50&rep_param2=&desformat=PDF&rep_param9=&rep_param4=&`,
         }));
         res.json({
           success: true,

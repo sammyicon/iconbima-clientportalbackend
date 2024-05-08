@@ -1,6 +1,7 @@
 import { Response, Request } from "express";
 import pool from "../../config/oracledb-connect";
 import { config } from "dotenv";
+import { getReportConfig } from "../../config/report-config";
 config();
 class ClaimCreditNotesController {
   async getClaimCreditNotes(req: Request, res: Response) {
@@ -42,6 +43,7 @@ class ClaimCreditNotesController {
          hd_canc_reason,    
          hd_canc_remarks,    
          hd_canc_date,
+          pkg_system_admin.get_entity_name(b.LN_LINK_AENT_CODE,b.LN_LINK_ENT_CODE)insured, 
          pkg_system_admin.get_system_desc ('RGBA_StatusValues', hd_status) status_bg_color_xx  
            from gl_je_header a, gl_je_lines b    
           where hd_org_code = :org_code
@@ -78,6 +80,7 @@ class ClaimCreditNotesController {
          hd_canc_reason,    
          hd_canc_remarks,    
          hd_canc_date,
+          pkg_system_admin.get_entity_name(b.LN_AENT_CODE,b.LN_ENT_CODE)insured, 
          pkg_system_admin.get_system_desc ('RGBA_StatusValues', hd_status) status_bg_color_xx  
          from gl_je_header a, gl_je_lines b    
          where hd_org_code = :org_code
@@ -88,6 +91,7 @@ class ClaimCreditNotesController {
           { intermediaryCode, clientCode, org_code: "50" }
         );
       }
+      const REPORT_URL = getReportConfig();
       if ((await results).rows && (await results).rows.length > 0) {
         const formattedData = (await results).rows?.map((row: any) => ({
           receiptIndex: row[2],
@@ -100,7 +104,8 @@ class ClaimCreditNotesController {
           type: row[13],
           posted: row[16],
           narration: row[5],
-          receiptUrl: `${process.env.INTRA_REPORT_URL}/reports/rwservlet?userid=icon/IC0N@bima19c&module=D:/icon/forms_version/ap/reports/mayfair_ke/AP_CR_NOTE&rep_doc_no=${row[1]}&p_os_code=01&p_role_code=GL.MGR&rep_param8=&p_grp_code=GL.MGR&rep_param1=&p_module_name=AP_CR_NOTE&p_org_code=50&p_menu_code=GL000003&rep_param6=&rep_param5=&p_report_title=CLAIMS%20CREDIT%20NOTE&rep_param3=&p_user_name=ICON,%20Admin%20&rep_doc_index=${row[2]}&p_user_code=1000000&rep_param7=&destype=cache&rep_doc_org=50&rep_param2=&desformat=PDF&rep_param9=&rep_param4=&`,
+          insured: row[25],
+          receiptUrl: `${REPORT_URL}/reports/rwservlet?userid=icon/IC0N@bima19c&module=D:/icon/forms_version/ap/reports/mayfair_ke/AP_CR_NOTE&rep_doc_no=${row[1]}&p_os_code=01&p_role_code=GL.MGR&rep_param8=&p_grp_code=GL.MGR&rep_param1=&p_module_name=AP_CR_NOTE&p_org_code=50&p_menu_code=GL000003&rep_param6=&rep_param5=&p_report_title=CLAIMS%20CREDIT%20NOTE&rep_param3=&p_user_name=ICON,%20Admin%20&rep_doc_index=${row[2]}&p_user_code=1000000&rep_param7=&destype=cache&rep_doc_org=50&rep_param2=&desformat=PDF&rep_param9=&rep_param4=&`,
         }));
         res.json({
           success: true,
