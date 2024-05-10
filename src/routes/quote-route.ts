@@ -6,14 +6,9 @@ const quoteRouter = Router();
 quoteRouter.post("/motor", (req: Request, res: Response) => {
   quoteController.requestMotorQuote(req.body, res);
 });
-quoteRouter.post("/non-motor", (req: Request, res: Response) => {
-  quoteController.requestNonMotorQuote(req.body, res);
-});
-quoteRouter.post("/select-motor", (req: Request, res: Response) => {
-  quoteController.selectMotorQuote(req.body, res);
-});
-quoteRouter.get("/fetch", (req: Request, res: Response) => {
-  quoteController.fetchUserQuotes(req.body, res);
+
+quoteRouter.post("/motor/policy", (req, res: Response) => {
+  quoteController.createPolicy(req, res);
 });
 
 export default quoteRouter;
