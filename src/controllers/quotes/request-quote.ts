@@ -20,7 +20,7 @@ class QuotesController {
       const premium = Math.round((value * 3.4) / 100);
       const stamp_duty = 40;
       const trainning_levy = Math.round((premium * 0.2) / 100);
-      const PHCfund = Math.round((value * 0.25) / 100);
+      const PHCfund = Math.round((premium * 0.25) / 100);
       const totalPremium = Math.round(
         premium + stamp_duty + trainning_levy + PHCfund
       );
@@ -69,6 +69,8 @@ class QuotesController {
         grossPremium,
         vehicleMake,
         vehicleModel,
+        paymentNumber,
+        vehicleValue,
       } = req.body;
 
       const response = await axios.post(
@@ -78,6 +80,7 @@ class QuotesController {
             {
               api_token: "",
               api_user: "1000000",
+              paymentNumber: paymentNumber,
               debitNoteNo: "39281",
               transSource: "DIRECT",
               policyFromDate: coverDateFrom,
@@ -132,7 +135,7 @@ class QuotesController {
                   vehicleManYear: vehicleManYear,
                   vehicleCC: 0,
                   vehiclePassangers: 0,
-                  vehicleValue: 0,
+                  vehicleValue: vehicleValue,
                   vehicleWindScreen: 0,
                   vehicleWindScreenPremuim: 0,
                   vehicleWindScreenValue: 0,

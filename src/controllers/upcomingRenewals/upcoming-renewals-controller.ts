@@ -138,6 +138,8 @@ ORDER BY pl_no`,
             p_to_dt: toDate,
           }
         );
+      } else {
+        return res.status(200).json({ success: false, results: [] });
       }
       if ((await results).rows && (await results).rows.length > 0) {
         const formattedData = (await results).rows?.map((row: any) => ({

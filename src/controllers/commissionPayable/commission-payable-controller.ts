@@ -385,6 +385,8 @@ ORDER BY pr_int_aent_code, pr_intermediary, pr_pl_no DESC`,
             p_branch: "",
           }
         );
+      } else {
+        return res.status(200).json({ success: false, results: [] });
       }
       if ((await results).rows && (await results).rows.length > 0) {
         const formattedData = (await results).rows?.map((row: any) => ({

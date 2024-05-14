@@ -429,6 +429,8 @@ ORDER BY order_flag, trn_product_name, trn_doc_gl_dt`,
             p_branch: "",
           }
         );
+      } else {
+        return res.status(200).json({ success: false, results: [] });
       }
       if ((await results).rows && (await results).rows.length > 0) {
         const formattedData = (await results).rows?.map((row: any) => ({
