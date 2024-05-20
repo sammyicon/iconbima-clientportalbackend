@@ -1,7 +1,7 @@
 import { Response, Request } from "express";
 import pool from "../../config/oracledb-connect";
 import { config } from "dotenv";
-import { getReportConfig } from "../../config/report-config";
+import { getARReceiptsReportConfig } from "../../config/report-config";
 config();
 class ClaimCreditNotesController {
   async getClaimCreditNotes(req: Request, res: Response) {
@@ -105,7 +105,7 @@ class ClaimCreditNotesController {
           posted: row[16],
           narration: row[5],
           insured: row[25],
-          receiptUrl: getReportConfig(row[1], row[2]),
+          receiptUrl: getARReceiptsReportConfig(row[1], row[2]),
         }));
         res.json({
           success: true,

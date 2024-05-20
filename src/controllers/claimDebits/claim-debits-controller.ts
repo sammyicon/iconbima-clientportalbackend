@@ -1,4 +1,7 @@
-import { getReportConfig } from "./../../config/report-config";
+import {
+  getARReceiptsReportConfig,
+  getTaxInvoiceReportConfig,
+} from "./../../config/report-config";
 import { config } from "dotenv";
 import { Request, Response } from "express";
 import pool from "../../config/oracledb-connect";
@@ -204,7 +207,7 @@ class ClaimDebitsController {
           premium: row[8],
           paid: row[10],
           os: row[12],
-          receiptUrl: getReportConfig(row[20], row[20]),
+          receiptUrl: getTaxInvoiceReportConfig(row[4], row[20]),
         }));
         res.json({
           success: true,

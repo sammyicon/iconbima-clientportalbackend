@@ -1,7 +1,8 @@
 import { Response, Request } from "express";
 import pool from "../../config/oracledb-connect";
 import { config } from "dotenv";
-import { getReportConfig } from "../../config/report-config";
+import { getARReceiptsReportConfig } from "../../config/report-config";
+
 config();
 
 class ReceiptsController {
@@ -197,7 +198,7 @@ class ReceiptsController {
           receiptMode: row[8],
           status: row[39],
           posted: row[37],
-          receiptUrl: getReportConfig(row[2], row[1]),
+          receiptUrl: getARReceiptsReportConfig(row[2], row[1]),
         }));
         res.json({
           success: true,
