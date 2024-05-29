@@ -1,9 +1,12 @@
-import { Request, Response, Router } from "express";
+import { Router } from "express";
 import policyController from "../controllers/policies/policies-controller";
 
 const policyRouter = Router();
 
 policyRouter.post("/fetch", (req, res) => {
   policyController.getPolicies(req, res);
+});
+policyRouter.post("/fetch/products", (req, res) => {
+  policyController.getProducts(req, res);
 });
 export default policyRouter;

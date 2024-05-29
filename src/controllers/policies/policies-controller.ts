@@ -1,5 +1,6 @@
 import { Response, Request } from "express";
 import pool from "../../config/oracledb-connect";
+import { getPolicyDocumentsReports } from "../../config/report-config";
 
 class PolicyController {
   async getPolicies(req: Request, res: Response) {
@@ -23,7 +24,7 @@ class PolicyController {
        pl_fm_dt,
        PL_TO_DT,
        PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_int_aent_code,pl_int_ent_code) intermediary,
-PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client
+PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client,pl_index
   FROM uh_policy a, ai_vehicle b
  WHERE     PL_INT_AENT_CODE = :intermediaryCode
        AND pl_int_ent_code = :clientCode
@@ -40,7 +41,7 @@ PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client
        pl_fm_dt,
        PL_TO_DT,
        PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_int_aent_code,pl_int_ent_code) intermediary,
-PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client
+PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client,pl_index
   FROM uh_policy a, ai_vehicle b
  WHERE   pl_assr_aent_code = :intermediaryCode
        AND pl_assr_ent_code = :clientCode
@@ -49,6 +50,7 @@ PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client
           { intermediaryCode, clientCode }
         );
       }
+
       if ((await results).rows && (await results).rows.length > 0) {
         const formattedData = (await results).rows?.map((row: any) => ({
           carRegNo: row[0],
@@ -60,6 +62,36 @@ PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client
           periodTo: row[6],
           intermediary: row[7],
           client: row[8],
+          reportUrl: getPolicyDocumentsReports(row[9], row[9]),
+        }));
+        res.json({
+          success: true,
+          results: formattedData,
+        });
+      } else {
+        return res.status(200).json({ success: false, results: [] });
+      }
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json(error);
+    }
+  }
+  async getProducts(req: Request, res: Response) {
+    let connection;
+    let results: any;
+    try {
+      console.log(req.body);
+      connection = (await pool).getConnection();
+      console.log("Database is connected");
+
+      results = (await connection).execute(
+        `select pr_code,pr_name from uw_products where pr_enabled='Y'`
+      );
+
+      if ((await results).rows && (await results).rows.length > 0) {
+        const formattedData = (await results).rows?.map((row: any) => ({
+          productCode: row[0],
+          productName: row[1],
         }));
         res.json({
           success: true,

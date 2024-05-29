@@ -6,10 +6,10 @@ const getConnConfig = () => {
   let user: string | undefined = "";
   let password: string | undefined = "";
   let connectionString: string | undefined = "";
-  if (process.env.COMPANY === "MAYFAIR") {
-    user = process.env.MAYFAIR_USER;
-    password = process.env.MAYFAIR_PASSWORD;
-    connectionString = process.env.MAYFAIR_CONN_STRING;
+  if (process.env.COMPANY === "MAYFAIR_TEST") {
+    user = process.env.MAYFAIR_TEST_USER;
+    password = process.env.MAYFAIR_TEST_PASSWORD;
+    connectionString = process.env.MAYFAIR_TEST_CONN_STRING;
   } else if (process.env.COMPANY === "INTRA") {
     user = process.env.INTRA_USER;
     password = process.env.INTRA_PASSWORD;
