@@ -18,7 +18,7 @@ class GLstatements {
         intermediaryCode === "25"
       ) {
         results = (await connection).execute(
-          `  SELECT order_flag,
+          ` SELECT order_flag,
          trn_org_code,
          ent_aent_code,
          ent_code,
@@ -71,8 +71,7 @@ class GLstatements {
          phc_amount,
          comm_amount,
          wtax_amount,
-         credit_net,
-         opening_balance
+         credit_net
     FROM (SELECT DISTINCT
                  1
                      order_flag,
@@ -233,7 +232,7 @@ class GLstatements {
                      0)
                      wtax_amount,
                  0
-                     credit_net,0 opening_balance
+                     credit_net
             FROM all_entity b, gl_transactions a
            WHERE     b.ent_aent_code = a.trn_aent_code
                  AND b.ent_code = a.trn_ent_code
@@ -340,8 +339,7 @@ class GLstatements {
                  DECODE (
                      :p_currency,
                      NULL, (NVL (rcp.trn_doc_fc_amt, 0) * rcp.trn_cur_rate),
-                     NVL (rcp.trn_doc_fc_amt, 0))        credit_net,
-                     0 opening_balance
+                     NVL (rcp.trn_doc_fc_amt, 0))        credit_net
             FROM all_entity b, gl_transactions rcp
            WHERE     b.ent_aent_code = rcp.trn_aent_code
                  AND b.ent_code = rcp.trn_ent_code
@@ -352,27 +350,31 @@ class GLstatements {
                                           'CM-CLAIMS',
                                           'AP-PAYMENT-NS')
                  AND rcp.trn_org_code = :p_org_code
-                 AND TRUNC (rcp.trn_doc_gl_dt) BETWEEN (NVL ( :p_fm_dt,
-                                                             rcp.trn_doc_gl_dt))
-                                                   AND (NVL ( :p_to_dt,
-                                                             rcp.trn_doc_gl_dt))
+                 AND TRUNC (rcp.trn_doc_gl_dt) BETWEEN  (
+                                                           NVL (
+                                                               :p_fm_dt,
+                                                               rcp.trn_doc_gl_dt))
+                                                   AND  (
+                                                           NVL (
+                                                               :p_to_dt,
+                                                               rcp.trn_doc_gl_dt))
                  AND b.ent_aent_code = NVL ( :p_category, ent_aent_code)
                  AND b.ent_code = NVL ( :p_intermediary, ent_code)
                  AND rcp.trn_cur_code = NVL ( :p_currency, trn_cur_code)
           UNION ALL
-          SELECT 3                                          order_flag,
-                 :p_org_code                                trn_org_code,
+          SELECT 3                                       order_flag,
+                 :p_org_code                             trn_org_code,
                  b.ent_aent_code,
                  b.ent_code,
                  b.ent_name,
-                 NULL                                       trn_product_code,
-                 NULL                                       trn_product_name,
-                 'OPENING BALANCE'                          trn_doc_no,
-                 NULL                                       trn_debit_no,
-                 NULL                                       trn_doc_type,
-                 NULL                                       trn_type,
-                 NULL                                       trn_doc_gl_dt,
-                 NULL                                       trn_os_code,
+                 NULL                                    trn_product_code,
+                 NULL                                    trn_product_name,
+                 'OPENING BALANCE'                       trn_doc_no,
+                 NULL                                    trn_debit_no,
+                 NULL                                    trn_doc_type,
+                 NULL                                    trn_type,
+                 NULL                                    trn_doc_gl_dt,
+                 NULL                                    trn_os_code,
                  (SELECT DISTINCT
                          NVL (
                              DECODE (os_type,
@@ -382,31 +384,25 @@ class GLstatements {
                     FROM hi_org_structure o, all_entity e
                    WHERE     e.ent_os_code = o.os_code(+)
                          AND e.ent_aent_code = b.ent_aent_code
-                         AND e.ent_code = b.ent_code)       trn_branch_code,
-                 NULL                                       trn_fin_code,
-                 NULL                                       trn_per_code,
-                 NULL                                       trn_narration,
-                 NULL                                       trn_policy_no,
-                 NULL                                       trn_policy_index,
-                 NULL                                       trn_end_no,
-                 NULL                                       trn_end_index,
-                 NULL                                       trn_drcr_flag,
-                 NULL                                       trn_cur_code,
-                 NULL                                       trn_cur_rate,
-                 0                                          gross_prem,
-                 0                                          pvt_amount,
-                 0                                          sd_amount,
-                 0                                          tl_amount,
-                 0                                          phc_amount,
-                 0                                          comm_amount,
-                 0                                          wtax_amount,
-                 0                                          credit_net,
-                 icon.get_entity_opening_balance ( :p_org_code,
-                                              ent_aent_code,
-                                              ent_code,
-                                              :p_fm_dt,
-                                              :p_currency
-                                             ) opening_balance
+                         AND e.ent_code = b.ent_code)    trn_branch_code,
+                 NULL                                    trn_fin_code,
+                 NULL                                    trn_per_code,
+                 NULL                                    trn_narration,
+                 NULL                                    trn_policy_no,
+                 NULL                                    trn_policy_index,
+                 NULL                                    trn_end_no,
+                 NULL                                    trn_end_index,
+                 NULL                                    trn_drcr_flag,
+                 NULL                                    trn_cur_code,
+                 NULL                                    trn_cur_rate,
+                 0                                       gross_prem,
+                 0                                       pvt_amount,
+                 0                                       sd_amount,
+                 0                                       tl_amount,
+                 0                                       phc_amount,
+                 0                                       comm_amount,
+                 0                                       wtax_amount,
+                 0                                       credit_net
             FROM all_entity b
            WHERE     b.ent_aent_code = NVL ( :p_category, ent_aent_code)
                  AND b.ent_code = NVL ( :p_intermediary, ent_code))

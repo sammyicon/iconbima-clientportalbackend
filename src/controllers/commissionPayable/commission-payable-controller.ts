@@ -403,6 +403,7 @@ ORDER BY pr_int_aent_code, pr_intermediary, pr_pl_no DESC`,
           WHTonComm: row[17],
           paidComm: row[21],
           netPayable: row[17] - row[21],
+          currencyCode: row[14],
         }));
         res.json({
           success: true,

@@ -24,7 +24,7 @@ class PolicyController {
        pl_fm_dt,
        PL_TO_DT,
        PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_int_aent_code,pl_int_ent_code) intermediary,
-PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client,pl_index
+PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client,pl_index,pl_end_index
   FROM uh_policy a, ai_vehicle b
  WHERE     PL_INT_AENT_CODE = :intermediaryCode
        AND pl_int_ent_code = :clientCode
@@ -41,7 +41,7 @@ PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client,pl_i
        pl_fm_dt,
        PL_TO_DT,
        PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_int_aent_code,pl_int_ent_code) intermediary,
-PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client,pl_index
+PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client,pl_index,pl_end_index
   FROM uh_policy a, ai_vehicle b
  WHERE   pl_assr_aent_code = :intermediaryCode
        AND pl_assr_ent_code = :clientCode
@@ -62,7 +62,7 @@ PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client,pl_i
           periodTo: row[6],
           intermediary: row[7],
           client: row[8],
-          reportUrl: getPolicyDocumentsReports(row[9], row[9]),
+          reportUrl: getPolicyDocumentsReports(row[9], row[9], row[10]),
         }));
         res.json({
           success: true,
