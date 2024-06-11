@@ -24,7 +24,7 @@ export const getTaxInvoiceReportConfig = (
 ) => {
   let reportUrl: string | undefined | null = "";
   if (process.env.COMPANY === "INTRA") {
-    reportUrl = `http://192.168.1.112:8001/icon/reports?p_module_name=UW_TAX_INVOICE_ER&destype=cache&desformat=PDF&rep_param1=0&rep_param2=Normal&rep_param3=KSH&rep_param4=Y&rep_param5=&rep_param6=&rep_param7=&rep_param8=&rep_param9=&rep_doc_index=${docIndex}&rep_doc_org=50&rep_doc_no=${docNumber}&p_role_code=UW.ADF&p_org_code=50&p_menu_code=100011&p_grp_code=UW.ADF&p_os_code=01&p_user_code=1000000&p_user_name=ICON,%20Admin%20&p_report_title=Tax%20Invoice&`;
+    reportUrl = `http://192.168.1.112:8001/icon/reports?p_module_name=UW_TAX_INVOICE_ER&destype=cache&desformat=PDF&rep_param1=1&rep_param2=Normal&rep_param3=KSH&rep_param4=Y&rep_param5=&rep_param6=&rep_param7=&rep_param8=&rep_param9=&rep_doc_index=${docIndex}&rep_doc_org=50&rep_doc_no=${docNumber}&p_role_code=UW.ADF&p_org_code=50&p_menu_code=100011&p_grp_code=UW.ADF&p_os_code=01&p_user_code=1000000&p_user_name=ICON,%20Admin%20&p_report_title=Tax%20Invoice&`;
   } else if (process.env.COMPANY === "MAYFAIR") {
     reportUrl = process.env.MAYFAIR_REPORT_URL;
   } else if (process.env.COMPANY === "MAYFAIR_TEST") {
