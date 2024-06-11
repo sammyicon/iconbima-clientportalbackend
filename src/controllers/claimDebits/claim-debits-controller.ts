@@ -97,8 +97,8 @@ class ClaimDebitsController {
                     and trn_cur_code = nvl(:cur_code,trn_cur_code)
                     and trunc (trn_doc_gl_dt) >= add_months (trunc (sysdate), -12) /*This Condition is for Limiting Documents to Last 12 Months*/
            order by gl_transactions.created_on desc
-        fetch first 50 rows only)
- where paid_fc_amt < trn_doc_lc_amt`,
+        )
+ `,
           {
             int_aent_code: intermediaryCode,
             int_ent_code: clientCode,
@@ -185,8 +185,8 @@ class ClaimDebitsController {
                     and trn_cur_code = nvl(:cur_code,trn_cur_code)
                     and trunc (trn_doc_gl_dt) >= add_months (trunc (sysdate), -12) /*This Condition is for Limiting Documents to Last 12 Months*/
            order by gl_transactions.created_on desc
-        fetch first 50 rows only)
- where paid_fc_amt < trn_doc_lc_amt`,
+        )
+ `,
           {
             assr_aent_code: intermediaryCode,
             assr_ent_code: clientCode,
