@@ -23,17 +23,22 @@
     "mongoose": "^8.3.1",
     "nodemon": "^3.1.0",
     "oracledb": "^6.4.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   },
-  "devDependencies": {},
   "scripts": {
-   "dev:build": "tsc -w",
+    "dev:build": "tsc -w",
     "dev:run": "nodemon dist/index.js",
     "dev": "concurrently npm:dev:*",
     "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.6"
+  }
 }

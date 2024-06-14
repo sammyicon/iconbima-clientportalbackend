@@ -14,6 +14,7 @@ import claimDebitsRouter from "./routes/claimDebits-route";
 import commissionPaybleRouter from "./routes/commisionpayble-routes";
 import glStatementsRouter from "./routes/gl-statements-routes";
 import upcomingRenewalsRouter from "./routes/upcoming-renewals-routes";
+import { setupSwagger } from "./swagger";
 
 const app = Express();
 app.use(cors());
@@ -21,6 +22,8 @@ app.use(Express.json());
 config();
 
 const port = process.env.PORT as number | string;
+
+setupSwagger(app);
 
 app.listen(port, () => console.log(`server started on port ${port}`));
 
