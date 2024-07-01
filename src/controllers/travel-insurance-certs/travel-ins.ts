@@ -31,7 +31,7 @@ export class TravelInsuranceService {
        AND pl_end_index = pc_end_index
        AND pc_mc_code = '14'
        AND pl_type = 'Normal'
-       --AND pl_flex09 IS NOT NULL
+       AND pl_flex09 IS NOT NULL
        AND pl_int_aent_code = :p_intermediary_aent_code
        AND pl_int_ent_code = :p_intermediary_ent_code`,
           {
