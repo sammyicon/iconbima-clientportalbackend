@@ -15,6 +15,7 @@ import commissionPaybleRouter from "./routes/commisionpayble-routes";
 import glStatementsRouter from "./routes/gl-statements-routes";
 import upcomingRenewalsRouter from "./routes/upcoming-renewals-routes";
 import { setupSwagger } from "./swagger";
+import travelCertRouter from "./routes/travel-cert.route";
 
 const app = Express();
 app.use(cors());
@@ -43,4 +44,5 @@ app.use("/receipts", receiptsRouter);
 app.use("/commissionPayble", commissionPaybleRouter);
 app.use("/glStatements", glStatementsRouter);
 app.use("/upcomingRenewals", upcomingRenewalsRouter);
+app.use("/travel", travelCertRouter);
 app.use("/user", userRouter);
