@@ -799,6 +799,15 @@ ORDER BY pr_org_code, pr_pl_index, pr_end_index`,
     } catch (error) {
       console.error(error);
       return res.status(500).json(error);
+    } finally {
+      try {
+        if (connection) {
+          (await connection).close();
+          console.info("Connection closed successfully");
+        }
+      } catch (error) {
+        console.error(error);
+      }
     }
   }
 }

@@ -415,6 +415,15 @@ ORDER BY pr_int_aent_code, pr_intermediary, pr_pl_no DESC`,
     } catch (error) {
       console.error(error);
       return res.status(500).json(error);
+    } finally {
+      try {
+        if (connection) {
+          (await connection).close();
+          console.info("Connection closed successfully");
+        }
+      } catch (error) {
+        console.error(error);
+      }
     }
   }
 }
