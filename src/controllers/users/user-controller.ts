@@ -235,6 +235,52 @@ class UserController {
       }
     }
   }
+  async userRoles(req: Request, res: Response) {
+    let connection;
+    let result: any;
+    try {
+      const { user_code } = req.body;
+      connection = (await pool).getConnection();
+      console.log("connected to the database");
+      result = (await connection).execute(
+        ` select * from (SELECT a.UR_USR_CODE user_code, c.role_code role_code, c.role_name role_name,b.USR_DESC ,b.usr_email,b.USR_ENT_CODE,b.USR_AENT_CODE
+  FROM ad_user_roles a, ad_users b, ad_roles c
+ WHERE a.UR_USR_CODE = b.USR_CODE AND a.UR_ROLE_CODE = c.ROLE_CODE) where user_code =nvl(:user_code,user_code)`,
+        { user_code: user_code }
+      );
+
+      if ((await result).rows && (await result).rows.length > 0) {
+        const formattedData = (await result).rows?.map((row: any) => ({
+          userCode: row[0],
+          roleCode: row[1],
+          roleName: row[2],
+          userDesc: row[3],
+          userEmail: row[4],
+          userEntityCode: row[5],
+          userCategoryCode: row[6],
+        }));
+        res.json({
+          success: true,
+          message: "Login successful!",
+          results: formattedData,
+        });
+      } else {
+        res.status(401).json({ success: false, message: "Invalid user code" });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: "An error occurred" });
+    } finally {
+      try {
+        if (connection) {
+          (await connection).close();
+          console.info("Connection closed successfully");
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
 }
 
 const userController = new UserController();

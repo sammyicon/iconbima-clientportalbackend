@@ -43,4 +43,7 @@ userRouter.post("/login", (req, res) => {
 userRouter.post("/user-login", (req, res) => {
   userController.loginUser(req, res);
 });
+userRouter.post("/user-roles", (req, res) => {
+  userController.userRoles(req, res);
+});
 export default userRouter;
