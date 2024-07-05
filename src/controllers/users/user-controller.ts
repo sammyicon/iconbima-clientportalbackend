@@ -251,12 +251,8 @@ class UserController {
                b.USR_DESC,
                b.usr_email,
                b.USR_ENT_CODE,
-               b.USR_AENT_CODE,
-               d.CERT_CONTENT
-          FROM ad_user_roles  a,
-               ad_users       b,
-               ad_roles       c,
-               ad_user_cert   d
+               b.USR_AENT_CODe
+          FROM ad_user_roles a, ad_users b, ad_roles c
          WHERE a.UR_USR_CODE = b.USR_CODE AND a.UR_ROLE_CODE = c.ROLE_CODE)
  WHERE user_code = NVL ( :user_code, user_code)`,
         { user_code: user_code }
@@ -271,7 +267,6 @@ class UserController {
           userEmail: row[4],
           userEntityCode: row[5],
           userCategoryCode: row[6],
-          userImage: row[7],
         }));
         res.json({
           success: true,
