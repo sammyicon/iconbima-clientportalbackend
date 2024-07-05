@@ -210,6 +210,7 @@ class UserController {
         return res.status(200).json({
           success: true,
           message: "User logged in successfully!",
+          userPayload: userPayload.entCode,
           accessToken,
         });
       } else {
@@ -243,9 +244,21 @@ class UserController {
       connection = (await pool).getConnection();
       console.log("connected to the database");
       result = (await connection).execute(
-        ` select * from (SELECT a.UR_USR_CODE user_code, c.role_code role_code, c.role_name role_name,b.USR_DESC ,b.usr_email,b.USR_ENT_CODE,b.USR_AENT_CODE
-  FROM ad_user_roles a, ad_users b, ad_roles c
- WHERE a.UR_USR_CODE = b.USR_CODE AND a.UR_ROLE_CODE = c.ROLE_CODE) where user_code =nvl(:user_code,user_code)`,
+        `SELECT *
+  FROM (SELECT a.UR_USR_CODE     user_code,
+               c.role_code       role_code,
+               c.role_name       role_name,
+               b.USR_DESC,
+               b.usr_email,
+               b.USR_ENT_CODE,
+               b.USR_AENT_CODE,
+               d.CERT_CONTENT
+          FROM ad_user_roles  a,
+               ad_users       b,
+               ad_roles       c,
+               ad_user_cert   d
+         WHERE a.UR_USR_CODE = b.USR_CODE AND a.UR_ROLE_CODE = c.ROLE_CODE)
+ WHERE user_code = NVL ( :user_code, user_code)`,
         { user_code: user_code }
       );
 
@@ -258,6 +271,7 @@ class UserController {
           userEmail: row[4],
           userEntityCode: row[5],
           userCategoryCode: row[6],
+          userImage: row[7],
         }));
         res.json({
           success: true,
