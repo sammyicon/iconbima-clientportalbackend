@@ -84,7 +84,7 @@ class UserController {
                         :p_un,
                         :p_pw,
                         :p_dev_type,
-                        :p_dev_address,
+                        :p_dev_address, 
                         :p_user_code,
                         :p_person_code,
                         :p_user_grp,
@@ -206,7 +206,7 @@ class UserController {
         const accessToken = jwt.sign(userPayload, "hhsyyahashhshsggaga", {
           expiresIn: "1d",
         });
-
+        console.log(userPayload.entCode);
         return res.status(200).json({
           success: true,
           message: "User logged in successfully!",
