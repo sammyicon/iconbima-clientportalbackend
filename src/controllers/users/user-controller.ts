@@ -172,6 +172,7 @@ class UserController {
           personCode: result.outBinds.p_person_code,
           userGrp: result.outBinds.p_user_grp,
           userOrg: result.outBinds.p_user_org,
+          userDesc: result.outBinds.p_user_desc,
           osCode: result.outBinds.p_os_code,
           traceMenu: result.outBinds.p_trace_menu,
           nameFormat: result.outBinds.p_name_format,

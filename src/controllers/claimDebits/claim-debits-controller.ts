@@ -21,7 +21,7 @@ class ClaimDebitsController {
         intermediaryCode === "25"
       ) {
         results = (await connection).execute(
-          `select row_num  rec_id,
+          `SELECT row_num                          rec_id,
        trn_org_code,
        trn_sys_no,
        trn_doc_type,
@@ -45,59 +45,63 @@ class ClaimDebitsController {
        trn_end_index,
        pl_assr_aent_code,
        pl_assr_ent_code,
-       insured_name_xx
-  from (     select row_number () over (order by trn_sys_no)
-                        as row_num,
-                    trn_org_code,
-                    trn_sys_no,
-                    trn_doc_type,
-                    trn_doc_no,
-                    to_char (trunc (trn_doc_gl_dt), 'Dd-Mon-RRRR')
-                        trn_doc_gl_dt,
-                    trn_cur_code,
-                    trn_doc_fc_amt,
-                    trn_doc_lc_amt,
-                    to_number (nvl (pkg_ifrs.get_total_matched_prem (
-                                        trn_org_code,
-                                        trn_policy_index,
-                                        trn_end_index,
-                                        'FC'),
-                                    0))
-                        paid_fc_amt,
-                    to_number (nvl (pkg_ifrs.get_total_matched_prem (
-                                        trn_org_code,
-                                        trn_policy_index,
-                                        trn_end_index,
-                                        'LC'),
-                                    0))
-                        paid_lc_amt,
-                    trn_aent_code,
-                    trn_ent_code,
-                    pkg_system_admin.get_entity_name (trn_aent_code, trn_ent_code)
-                        intermediary_name_xx,
-                    trn_policy_no,
-                    trn_end_no,
-                    trn_narration,
-                    'N'
-                        selected_xx,
-                    trn_policy_index,
-                    trn_end_index,
-                    pl_assr_aent_code,
-                    pl_assr_ent_code,
-                    pkg_system_admin.get_entity_name (pl_assr_aent_code,
-                                                      pl_assr_ent_code)
-                        insured_name_xx
-               from gl_transactions, uw_policy
-              where     trn_org_code = :org_code
-                    and trn_type = 'UW.003'
-                    and trn_org_code = pl_org_code
-                    and trn_policy_index = pl_index
-                    and pl_int_aent_code = nvl ( :int_aent_code, pl_int_aent_code)
-                    and pl_int_ent_code = nvl ( :int_ent_code, pl_int_ent_code)
-                    and trn_cur_code = nvl(:cur_code,trn_cur_code)
-                    and trunc (trn_doc_gl_dt) >= add_months (trunc (sysdate), -12) /*This Condition is for Limiting Documents to Last 12 Months*/
-           order by gl_transactions.created_on desc
-        )
+       insured_name_xx,
+       vehicle_no
+  FROM (  SELECT ROW_NUMBER () OVER (ORDER BY trn_sys_no)
+                     AS row_num,
+                 trn_org_code,
+                 trn_sys_no,
+                 trn_doc_type,
+                 trn_doc_no,
+                 TO_CHAR (TRUNC (trn_doc_gl_dt), 'Dd-Mon-RRRR')
+                     trn_doc_gl_dt,
+                 trn_cur_code,
+                 trn_doc_fc_amt,
+                 trn_doc_lc_amt,
+                 TO_NUMBER (NVL (pkg_ifrs.get_total_matched_prem (
+                                     trn_org_code,
+                                     trn_policy_index,
+                                     trn_end_index,
+                                     'FC'),
+                                 0))
+                     paid_fc_amt,
+                 TO_NUMBER (NVL (pkg_ifrs.get_total_matched_prem (
+                                     trn_org_code,
+                                     trn_policy_index,
+                                     trn_end_index,
+                                     'LC'),
+                                 0))
+                     paid_lc_amt,
+                 trn_aent_code,
+                 trn_ent_code,
+                 pkg_system_admin.get_entity_name (trn_aent_code, trn_ent_code)
+                     intermediary_name_xx,
+                 trn_policy_no,
+                 trn_end_no,
+                 trn_narration,
+                 'N'
+                     selected_xx,
+                 trn_policy_index,
+                 trn_end_index,
+                 pl_assr_aent_code,
+                 pl_assr_ent_code,
+                 pkg_system_admin.get_entity_name (pl_assr_aent_code,
+                                                   pl_assr_ent_code)
+                     insured_name_xx,
+                 v.AI_REGN_NO
+                     vehicle_no
+            FROM gl_transactions, uw_policy, ai_vehicle v
+           WHERE     trn_org_code = :org_code
+                 AND pl_index = v.AI_PL_INDEX
+                 AND trn_type = 'UW.003'
+                 AND trn_org_code = pl_org_code
+                 AND trn_policy_index = pl_index
+                 AND pl_int_aent_code = NVL ( :int_aent_code, pl_int_aent_code)
+                 AND pl_int_ent_code = NVL ( :int_ent_code, pl_int_ent_code)
+                 AND trn_cur_code = NVL ( :cur_code, trn_cur_code)
+                 AND TRUNC (trn_doc_gl_dt) >= ADD_MONTHS (TRUNC (SYSDATE), -12)
+        ORDER BY gl_transactions.created_on DESC)
+        
  `,
           {
             int_aent_code: intermediaryCode,
@@ -108,7 +112,7 @@ class ClaimDebitsController {
         );
       } else {
         results = (await connection).execute(
-          `select row_num  rec_id,
+          `SELECT row_num                          rec_id,
        trn_org_code,
        trn_sys_no,
        trn_doc_type,
@@ -132,60 +136,62 @@ class ClaimDebitsController {
        trn_end_index,
        pl_assr_aent_code,
        pl_assr_ent_code,
-       insured_name_xx
-  from (     select row_number () over (order by trn_sys_no)
-                        as row_num,
-                    trn_org_code,
-                    trn_sys_no,
-                    trn_doc_type,
-                    trn_doc_no,
-                    to_char (trunc (trn_doc_gl_dt), 'Dd-Mon-RRRR')
-                        trn_doc_gl_dt,
-                    trn_cur_code,
-                    trn_doc_fc_amt,
-                    trn_doc_lc_amt,
-                    to_number (nvl (pkg_ifrs.get_total_matched_prem (
-                                        trn_org_code,
-                                        trn_policy_index,
-                                        trn_end_index,
-                                        'FC'),
-                                    0))
-                        paid_fc_amt,
-                    to_number (nvl (pkg_ifrs.get_total_matched_prem (
-                                        trn_org_code,
-                                        trn_policy_index,
-                                        trn_end_index,
-                                        'LC'),
-                                    0))
-                        paid_lc_amt,
-                    trn_aent_code,
-                    trn_ent_code,
-                    pkg_system_admin.get_entity_name (trn_aent_code, trn_ent_code)
-                        intermediary_name_xx,
-                    trn_policy_no,
-                    trn_end_no,
-                    trn_narration,
-                    'N'
-                        selected_xx,
-                    trn_policy_index,
-                    trn_end_index,
-                    pl_assr_aent_code,
-                    pl_assr_ent_code,
-                    pkg_system_admin.get_entity_name (pl_assr_aent_code,
-                                                      pl_assr_ent_code)
-                        insured_name_xx
-               from gl_transactions, uw_policy
-              where     trn_org_code = :org_code
-                    and trn_type = 'UW.003'
-                    and trn_org_code = pl_org_code
-                    and trn_policy_index = pl_index
-                    and pl_assr_aent_code =
-                        nvl ( :assr_aent_code, pl_assr_aent_code)
-                    and pl_assr_ent_code = nvl ( :assr_ent_code, pl_assr_ent_code)
-                    and trn_cur_code = nvl(:cur_code,trn_cur_code)
-                    and trunc (trn_doc_gl_dt) >= add_months (trunc (sysdate), -12) /*This Condition is for Limiting Documents to Last 12 Months*/
-           order by gl_transactions.created_on desc
-        )
+       insured_name_xx,
+       vehicle_no
+  FROM (  SELECT ROW_NUMBER () OVER (ORDER BY trn_sys_no)
+                     AS row_num,
+                 trn_org_code,
+                 trn_sys_no,
+                 trn_doc_type,
+                 trn_doc_no,
+                 TO_CHAR (TRUNC (trn_doc_gl_dt), 'Dd-Mon-RRRR')
+                     trn_doc_gl_dt,
+                 trn_cur_code,
+                 trn_doc_fc_amt,
+                 trn_doc_lc_amt,
+                 TO_NUMBER (NVL (pkg_ifrs.get_total_matched_prem (
+                                     trn_org_code,
+                                     trn_policy_index,
+                                     trn_end_index,
+                                     'FC'),
+                                 0))
+                     paid_fc_amt,
+                 TO_NUMBER (NVL (pkg_ifrs.get_total_matched_prem (
+                                     trn_org_code,
+                                     trn_policy_index,
+                                     trn_end_index,
+                                     'LC'),
+                                 0))
+                     paid_lc_amt,
+                 trn_aent_code,
+                 trn_ent_code,
+                 pkg_system_admin.get_entity_name (trn_aent_code, trn_ent_code)
+                     intermediary_name_xx,
+                 trn_policy_no,
+                 trn_end_no,
+                 trn_narration,
+                 'N'
+                     selected_xx,
+                 trn_policy_index,
+                 trn_end_index,
+                 pl_assr_aent_code,
+                 pl_assr_ent_code,
+                 pkg_system_admin.get_entity_name (pl_assr_aent_code,
+                                                   pl_assr_ent_code)
+                     insured_name_xx,
+                 v.AI_REGN_NO
+                     vehicle_no
+            FROM gl_transactions, uw_policy, ai_vehicle v
+           WHERE     trn_org_code = :org_code
+                 AND pl_index = v.AI_PL_INDEX
+                 AND trn_type = 'UW.003'
+                 AND trn_org_code = pl_org_code
+                 AND trn_policy_index = pl_index
+                 AND pl_int_aent_code = NVL ( :int_aent_code, pl_int_aent_code)
+                 AND pl_int_ent_code = NVL ( :int_ent_code, pl_int_ent_code)
+                 AND trn_cur_code = NVL ( :cur_code, trn_cur_code)
+                 AND TRUNC (trn_doc_gl_dt) >= ADD_MONTHS (TRUNC (SYSDATE), -12)
+        ORDER BY gl_transactions.created_on DESC)   
  `,
           {
             assr_aent_code: intermediaryCode,
@@ -208,6 +214,7 @@ class ClaimDebitsController {
           paid: row[10],
           os: row[12],
           receiptUrl: getTaxInvoiceReportConfig(row[4], row[20]),
+          vehicleNo: row[25],
         }));
         res.json({
           success: true,
