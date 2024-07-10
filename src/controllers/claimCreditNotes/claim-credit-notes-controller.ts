@@ -50,7 +50,7 @@ class ClaimCreditNotesController {
           and b.LN_AENT_CODE=nvl(:intermediaryCode,b.LN_AENT_CODE)
           and b.LN_ENT_CODE = nvl(:clientCode,b.LN_ENT_CODE)
           and hd_type='CREDIT NOTE'
-          and hd_no = b.LN_HD_NO and hd_posted = 'Y'`,
+          and hd_no = b.LN_HD_NO and hd_posted = 'Y' order by hd_gl_date desc`,
           { intermediaryCode, clientCode, org_code: "50" }
         );
       } else {
@@ -87,7 +87,7 @@ class ClaimCreditNotesController {
          and b.LN_LINK_AENT_CODE=nvl(:intermediaryCode,b.LN_LINK_AENT_CODE)
          and b.LN_LINK_ENT_CODE = nvl(:clientCode,b.LN_LINK_ENT_CODE)
          and hd_type='CREDIT NOTE'
-         and hd_no = b.LN_HD_NO and hd_posted ='Y'`,
+         and hd_no = b.LN_HD_NO and hd_posted ='Y' order by hd_gl_date desc`,
           { intermediaryCode, clientCode, org_code: "50" }
         );
       }
