@@ -96,7 +96,7 @@ class ReceiptsController {
          hd_paying_for,
          pkg_system_admin.get_system_desc ('RGBA_StatusValues', hd_status) status_bg_color_xx  
     from ar_receipts_header  
-   where hd_org_code = :p_org_code and hd_aent_code = nvl(:intermediaryCode,hd_aent_code) and hd_ent_code=nvl(:clientCode,hd_ent_code) and hd_posted ='Y'`,
+   where hd_org_code = :p_org_code and hd_aent_code = nvl(:intermediaryCode,hd_aent_code) and hd_ent_code=nvl(:clientCode,hd_ent_code) and hd_posted ='Y' ORDER BY hd_gl_date DESC`,
           { intermediaryCode, clientCode, p_org_code: "50" }
         );
       } else {
@@ -182,7 +182,7 @@ class ReceiptsController {
   FROM ar_receipts_header
  WHERE     hd_org_code = :p_org_code
        AND hd_int_aent_code = NVL ( :intermediaryCode, hd_int_aent_code)
-       AND hd_int_ent_code = NVL ( :clientCode, hd_int_ent_code) and hd_posted ='Y'`,
+       AND hd_int_ent_code = NVL ( :clientCode, hd_int_ent_code) and hd_posted ='Y' ORDER BY hd_gl_date DESC`,
           { intermediaryCode, clientCode, p_org_code: "50" }
         );
       }
