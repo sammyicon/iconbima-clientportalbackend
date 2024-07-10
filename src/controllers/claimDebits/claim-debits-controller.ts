@@ -46,7 +46,7 @@ class ClaimDebitsController {
        pl_assr_aent_code,
        pl_assr_ent_code,
        insured_name_xx,
-       vehicle_no
+       vehicle_no,end_index
   FROM (  SELECT ROW_NUMBER () OVER (ORDER BY trn_sys_no)
                      AS row_num,
                  trn_org_code,
@@ -89,7 +89,7 @@ class ClaimDebitsController {
                                                    pl_assr_ent_code)
                      insured_name_xx,
                  v.AI_REGN_NO
-                     vehicle_no
+                     vehicle_no,trn_end_index end_index
             FROM gl_transactions, uw_policy, ai_vehicle v
            WHERE     trn_org_code = :org_code
                  AND pl_index = v.AI_PL_INDEX
@@ -137,7 +137,7 @@ class ClaimDebitsController {
        pl_assr_aent_code,
        pl_assr_ent_code,
        insured_name_xx,
-       vehicle_no
+       vehicle_no,end_index
   FROM (  SELECT ROW_NUMBER () OVER (ORDER BY trn_sys_no)
                      AS row_num,
                  trn_org_code,
@@ -180,7 +180,7 @@ class ClaimDebitsController {
                                                    pl_assr_ent_code)
                      insured_name_xx,
                  v.AI_REGN_NO
-                     vehicle_no
+                     vehicle_no,trn_end_index end_index
             FROM gl_transactions, uw_policy, ai_vehicle v
            WHERE     trn_org_code = :org_code
                  AND pl_index = v.AI_PL_INDEX
@@ -213,7 +213,7 @@ class ClaimDebitsController {
           premium: row[8],
           paid: row[10],
           os: row[12],
-          receiptUrl: getTaxInvoiceReportConfig(row[4], row[20]),
+          receiptUrl: getTaxInvoiceReportConfig(row[4], row[20], row[26]),
           vehicleNo: row[25],
         }));
         res.json({
