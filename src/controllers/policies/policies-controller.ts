@@ -29,7 +29,7 @@ PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client,pl_i
  WHERE     PL_INT_AENT_CODE = :intermediaryCode
        AND pl_int_ent_code = :clientCode
        AND pl_status IN ('Active', 'Canceled')
-       and b.AI_PL_INDEX=a.pl_index`,
+       and b.AI_PL_INDEX=a.pl_index order by pl_gl_date desc`,
           { intermediaryCode, clientCode }
         );
       } else {
@@ -46,7 +46,7 @@ PKG_SYSTEM_ADMIN.GET_ENTITY_NAME(pl_assr_aent_code,pl_assr_ent_code) client,pl_i
  WHERE   pl_assr_aent_code = :intermediaryCode
        AND pl_assr_ent_code = :clientCode
        AND pl_status IN ('Active', 'Canceled')
-       and b.AI_PL_INDEX=a.pl_index`,
+       and b.AI_PL_INDEX=a.pl_index order by pl_gl_date desc`,
           { intermediaryCode, clientCode }
         );
       }
