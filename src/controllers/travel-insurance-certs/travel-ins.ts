@@ -33,7 +33,7 @@ export class TravelInsuranceService {
        AND pl_type = 'Normal'
        AND pl_flex09 IS NOT NULL
        AND pl_int_aent_code = :p_intermediary_aent_code
-       AND pl_int_ent_code = :p_intermediary_ent_code`,
+       AND pl_int_ent_code = :p_intermediary_ent_code order by a.created_on desc`,
           {
             p_intermediary_aent_code: intermediaryCode,
             p_intermediary_ent_code: clientCode,
