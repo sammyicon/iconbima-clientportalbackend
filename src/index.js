@@ -16,6 +16,7 @@ import upcomingRenewalsRouter from "./routes/upcoming-renewals-routes.js";
 import expectedRenewalsRouter from "./routes/expectedRenewalsRouter.js";
 import travelCertRouter from "./routes/travel-cert.route.js";
 import userRouter from "./routes/user-routes.js";
+import clientPolicyRouter from "./routes/client-policy-creation-route.js";
 
 const app = Express();
 app.use(cors());
@@ -44,3 +45,4 @@ app.use("/glStatements", glStatementsRouter);
 app.use("/upcomingRenewals", upcomingRenewalsRouter);
 app.use("/expectedRenewals", expectedRenewalsRouter);
 app.use("/travel", travelCertRouter);
+app.use("/policy", clientPolicyRouter);
