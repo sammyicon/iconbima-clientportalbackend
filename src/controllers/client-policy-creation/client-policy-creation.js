@@ -149,7 +149,7 @@ export class ClientPolicyCreation {
         p_int_ent_code,
         p_assr_aent_code,
         p_assr_ent_code,
-        p_assr_site_code,
+
         p_fm_dt,
         p_to_dt,
         p_user_code,
@@ -390,15 +390,15 @@ export class ClientPolicyCreation {
 
       // Execute the PL/SQL block
       const result = await connection.execute(plsqlBlock, binds, {
-        outFormat: OracleDB.OUT_FORMAT_OBJECT,
         autoCommit: true,
+        outFormat: OracleDB.OUT_FORMAT_OBJECT,
       });
-      console.info("Policy created successfully:", result.outBinds);
+      console.info("Policy created successfully:", result.rows);
 
       // Send response
       return res.status(200).json({
         message: "Policy created successfully",
-        data: result.outBinds,
+        data: (await result).rows,
       });
     } catch (error) {
       console.error("Error creating policy:", error);
@@ -412,6 +412,95 @@ export class ClientPolicyCreation {
           await connection.close();
         } catch (closeError) {
           console.error("Error closing the database connection:", closeError);
+        }
+      }
+    }
+  }
+  static async getOrgBranches(req, res) {
+    let connection;
+
+    try {
+      connection = (await pool).getConnection();
+
+      const results = (await connection).execute(
+        `select os_org_code,os_code,os_name from hi_org_structure`,
+        [],
+        {
+          outFormat: OracleDB.OUT_FORMAT_OBJECT,
+        }
+      );
+
+      return res.status(200).json({ results: (await results).rows });
+    } catch (error) {
+      console.error("error getting org branches", error);
+      return res
+        .status(500)
+        .json({ error: "error getting org branches", details: error.message });
+    } finally {
+      if (connection) {
+        try {
+          (await connection).close();
+        } catch (error) {
+          console.error("error closing db", error);
+        }
+      }
+    }
+  }
+  static async getSystemCodes(req, res) {
+    let connection;
+
+    try {
+      connection = (await pool).getConnection();
+
+      const results = (await connection).execute(
+        `select sys_code,sys_name,sys_desc,sys_type from AD_SYSTEM_CODES WHERE SYS_TYPE in ('AD_VEHICLE_TYPE','AD_VEHICLE_USE','Institutional_Sector')`,
+        [],
+        {
+          outFormat: OracleDB.OUT_FORMAT_OBJECT,
+        }
+      );
+      return res.status(200).json({ results: (await results).rows });
+    } catch (error) {
+      console.error("error getting system codes", error);
+      return res
+        .status(500)
+        .json({ error: "error getting system codes", details: error.message });
+    } finally {
+      if (connection) {
+        try {
+          (await connection).close();
+        } catch (error) {
+          console.error("error closing db", error);
+        }
+      }
+    }
+  }
+
+  static async getCoverProducts(req, res) {
+    let connection;
+
+    try {
+      connection = (await pool).getConnection();
+
+      const results = (await connection).execute(
+        `select pr_org_code,pr_code,pr_name from uw_products`,
+        [],
+        {
+          outFormat: OracleDB.OUT_FORMAT_OBJECT,
+        }
+      );
+      return res.status(200).json({ results: (await results).rows });
+    } catch (error) {
+      console.error("error getting products", error);
+      return res
+        .status(500)
+        .json({ error: "error getting products", details: error.message });
+    } finally {
+      if (connection) {
+        try {
+          (await connection).close();
+        } catch (error) {
+          console.error("error closing db", error);
         }
       }
     }
