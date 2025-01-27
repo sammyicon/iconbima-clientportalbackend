@@ -453,7 +453,7 @@ export class ClientPolicyCreation {
       connection = (await pool).getConnection();
 
       const results = (await connection).execute(
-        `select sys_code,sys_name,sys_desc,sys_type from AD_SYSTEM_CODES WHERE SYS_TYPE in ('AD_VEHICLE_TYPE','AD_VEHICLE_USE','Institutional_Sector')`,
+        `select sys_code,sys_name,sys_desc,sys_type from AD_SYSTEM_CODES WHERE SYS_TYPE in ('AD_VEHICLE_TYPE','AD_VEHICLE_USE','Institutional_Sector','')`,
         [],
         {
           outFormat: OracleDB.OUT_FORMAT_OBJECT,
