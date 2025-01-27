@@ -44,7 +44,7 @@ export class ClientPolicyCreation {
           -- Check if ent_id_no already exists
           SELECT COUNT(*) INTO v_count
              FROM ALL_ENTITY
-          WHERE ent_id_no = :clientIDNo;
+          WHERE ent_id_no = :clientIDNo and ent_email=:email;
 
           IF v_count > 0 THEN
             -- If ID already exists, raise an exception
@@ -144,7 +144,6 @@ export class ClientPolicyCreation {
     try {
       // Destructure required values from request body
       const {
-        p_org_code,
         p_pr_code,
         p_int_aent_code,
         p_int_ent_code,
@@ -172,7 +171,10 @@ export class ClientPolicyCreation {
         p_vat,
         p_cover_type,
         p_vehicle_type,
+        p_os_code,
       } = req.body;
+
+      console.log("request...", req.body);
 
       // Get connection from pool
       connection = await (await pool).getConnection();
@@ -195,7 +197,7 @@ export class ClientPolicyCreation {
                 p_int_site_code    => NULL,
                 p_assr_aent_code   => :p_assr_aent_code,
                 p_assr_ent_code    => :p_assr_ent_code,
-                p_assr_site_code   => :p_assr_site_code,
+                p_assr_site_code   => NULL,
                 p_fm_dt            => :p_fm_dt,
                 p_to_dt            => :p_to_dt,
                 p_os_code          => :p_os_code,
@@ -213,41 +215,41 @@ export class ClientPolicyCreation {
                   INTO v_bima_make
                   FROM ad_system_codes
                  WHERE sys_type = 'AD_VEHICLE_MAKE'
-                   AND LOWER (sys_name) = LOWER (:p_make)
+                   AND  (sys_name) =  :p_make
                    AND ROWNUM = 1;
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN
                     pkg_system_admin.add_sys_code (
                         p_sys_type      => 'AD_VEHICLE_MAKE',
-                        p_sys_code      => UPPER (:p_make),
+                        p_sys_code      =>  :p_make,
                         p_sys_name      => :p_make,
                         p_sys_enabled   => 'Y',
                         p_sys_desc      => :p_make,
                         p_created_by    => :p_user_code,
                         p_commit        => 'Y'
                     );
-                    v_bima_make := UPPER (:p_make);
+                    v_bima_make :=  (:p_make);
             END;
 
             BEGIN
                 SELECT sys_code
                   INTO v_bima_model
                   FROM ad_system_codes
-                 WHERE sys_type = 'AD_VEHICLE_MODEL'
-                   AND LOWER (sys_name) = LOWER (:p_model)
+                 WHERE sys_type = 'AD_VEHICLE_MAKE'
+                   AND  (sys_name) =  :p_model
                    AND ROWNUM = 1;
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN
                     pkg_system_admin.add_sys_code (
-                        p_sys_type      => 'AD_VEHICLE_MODEL',
-                        p_sys_code      => UPPER (:p_model),
+                        p_sys_type      => 'AD_VEHICLE_MAKE',
+                        p_sys_code      =>  :p_model,
                         p_sys_name      => :p_model,
                         p_sys_enabled   => 'Y',
                         p_sys_desc      => :p_model,
                         p_created_by    => :p_user_code,
                         p_commit        => 'Y'
                     );
-                    v_bima_model := UPPER (:p_model);
+                    v_bima_model :=  (:p_model);
             END;
 
             -- Insert vehicle details
@@ -292,38 +294,103 @@ export class ClientPolicyCreation {
 
       // Bind variables
       const binds = {
-        p_org_code: { val: p_org_code, type: OracleDB.STRING },
-        p_pr_code: { val: p_pr_code, type: OracleDB.STRING },
-        p_int_aent_code: { val: p_int_aent_code, type: OracleDB.STRING },
-        p_int_ent_code: { val: p_int_ent_code, type: OracleDB.STRING },
-        p_assr_aent_code: { val: p_assr_aent_code, type: OracleDB.STRING },
-        p_assr_ent_code: { val: p_assr_ent_code, type: OracleDB.STRING },
-        p_assr_site_code: { val: p_assr_site_code, type: OracleDB.STRING },
-        p_fm_dt: { val: p_fm_dt, type: OracleDB.DATE },
-        p_to_dt: { val: p_to_dt, type: OracleDB.DATE },
-        p_user_code: { val: p_user_code, type: OracleDB.STRING },
-        p_created_ip: { val: p_created_ip, type: OracleDB.STRING },
-        p_make: { val: p_make, type: OracleDB.STRING },
-        p_model: { val: p_model, type: OracleDB.STRING },
-        p_regn_no: { val: p_regn_no, type: OracleDB.STRING },
-        p_vehicle_use: { val: p_vehicle_use, type: OracleDB.STRING },
-        p_color: { val: p_color, type: OracleDB.STRING },
-        p_engine_no: { val: p_engine_no, type: OracleDB.STRING },
-        p_chassis_no: { val: p_chassis_no, type: OracleDB.STRING },
-        p_yom: { val: p_yom, type: OracleDB.STRING },
-        p_cc: { val: p_cc, type: OracleDB.STRING },
-        p_seating_cap: { val: p_seating_cap, type: OracleDB.STRING },
-        p_value: { val: p_value, type: OracleDB.STRING },
-        p_windscreen_value: { val: p_windscreen_value, type: OracleDB.STRING },
-        p_radio_value: { val: p_radio_value, type: OracleDB.STRING },
-        p_premium: { val: p_premium, type: OracleDB.STRING },
-        p_vat: { val: p_vat, type: OracleDB.STRING },
-        p_cover_type: { val: p_cover_type, type: OracleDB.STRING },
-        p_vehicle_type: { val: p_vehicle_type, type: OracleDB.STRING },
+        p_org_code: { val: "50", type: OracleDB.STRING },
+        p_pr_code: { val: p_pr_code || null, type: OracleDB.STRING },
+        p_os_code: { val: p_os_code, type: OracleDB.STRING },
+        p_int_aent_code: {
+          val: p_int_aent_code || null,
+          type: OracleDB.STRING,
+        },
+        p_int_ent_code: {
+          val: p_int_ent_code || null,
+          type: OracleDB.STRING,
+        },
+        p_assr_aent_code: {
+          val: p_assr_aent_code || null,
+          type: OracleDB.STRING,
+        },
+        p_assr_ent_code: {
+          val: p_assr_ent_code || null,
+          type: OracleDB.STRING,
+        },
+
+        p_fm_dt: {
+          val: p_fm_dt ? new Date(p_fm_dt) : null,
+          type: OracleDB.DATE,
+        },
+        p_to_dt: {
+          val: p_to_dt ? new Date(p_to_dt) : null,
+          type: OracleDB.DATE,
+        },
+        p_user_code: {
+          val: p_user_code || null,
+          type: OracleDB.STRING,
+        },
+        p_created_ip: {
+          val: p_created_ip || null,
+          type: OracleDB.STRING,
+        },
+        p_make: { val: p_make || null, type: OracleDB.STRING },
+        p_model: { val: p_model || null, type: OracleDB.STRING },
+        p_regn_no: { val: p_regn_no || null, type: OracleDB.STRING },
+        p_vehicle_use: {
+          val: p_vehicle_use || null,
+          type: OracleDB.STRING,
+        },
+        p_color: { val: p_color || null, type: OracleDB.STRING },
+        p_engine_no: {
+          val: p_engine_no || null,
+          type: OracleDB.STRING,
+        },
+        p_chassis_no: {
+          val: p_chassis_no || null,
+          type: OracleDB.STRING,
+        },
+        p_yom: {
+          val: p_yom ? parseInt(p_yom, 10) : null,
+          type: OracleDB.NUMBER,
+        },
+        p_cc: {
+          val: p_cc ? parseInt(p_cc, 10) : null,
+          type: OracleDB.NUMBER,
+        },
+        p_seating_cap: {
+          val: p_seating_cap ? parseInt(p_seating_cap, 10) : null,
+          type: OracleDB.NUMBER,
+        },
+        p_value: {
+          val: p_value ? parseFloat(p_value) : null,
+          type: OracleDB.NUMBER,
+        },
+        p_windscreen_value: {
+          val: p_windscreen_value ? parseFloat(p_windscreen_value) : null,
+          type: OracleDB.NUMBER,
+        },
+        p_radio_value: {
+          val: p_radio_value ? parseFloat(p_radio_value) : null,
+          type: OracleDB.NUMBER,
+        },
+        p_premium: {
+          val: p_premium ? parseFloat(p_premium) : null,
+          type: OracleDB.NUMBER,
+        },
+        p_vat: {
+          val: p_vat ? parseFloat(p_vat) : null,
+          type: OracleDB.NUMBER,
+        },
+        p_cover_type: {
+          val: p_cover_type || null,
+          type: OracleDB.STRING,
+        },
+        p_vehicle_type: {
+          val: p_vehicle_type || null,
+          type: OracleDB.STRING,
+        },
       };
 
       // Execute the PL/SQL block
       const result = await connection.execute(plsqlBlock, binds, {
+        outFormat: OracleDB.OUT_FORMAT_OBJECT,
         autoCommit: true,
       });
       console.info("Policy created successfully:", result.outBinds);

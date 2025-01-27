@@ -7,4 +7,8 @@ clientPolicyRouter.post("/createUser", (req, res) => {
   ClientPolicyCreation.createClient(req, res);
 });
 
+clientPolicyRouter.post("/createPolicy", (req, res) => {
+  ClientPolicyCreation.createPolicy(req, res);
+});
+
 export default clientPolicyRouter;

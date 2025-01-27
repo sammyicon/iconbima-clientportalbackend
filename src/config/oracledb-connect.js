@@ -19,11 +19,17 @@ const getConnConfig = () => {
     user = process.env.MAYFAIR_USER;
     password = process.env.MAYFAIR_PASSWORD;
     connectionString = process.env.MAYFAIR_CONN_STRING;
+  } else if (process.env.COMPANY === "LOCAL") {
+    user = process.env.LOCAL_USER;
+    password = process.env.LOCAL_PASSWORD;
+    connectionString = process.env.LOCAL_CONN_STRING;
   }
   return { user, password, connectionString };
 };
 
 const { user, password, connectionString } = getConnConfig();
+
+console.log("connectionString", connectionString);
 
 export const pool = OracleDB.createPool({
   user: user,
