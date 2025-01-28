@@ -125,14 +125,14 @@ export class ClientPolicyCreation {
 
       // Send response
       return res.status(200).json({
-        sucess: true,
+        success: true,
         message: "Client created successfully",
         data: result.outBinds,
       });
     } catch (error) {
       console.error("Error creating client:", error);
       return res.status(500).json({
-        sucess: false,
+        success: false,
         error: "Failed to create client",
         details: error.message,
       });
@@ -419,14 +419,14 @@ export class ClientPolicyCreation {
 
       // Send response
       return res.status(200).json({
-        sucess: true,
+        success: true,
         message: "Policy created successfully",
         data: result.outBinds,
       });
     } catch (error) {
       console.error("Error creating policy:", error);
       return res.status(500).json({
-        sucess: true,
+        success: false,
         error: "Failed to create policy",
         details: error.message,
       });
