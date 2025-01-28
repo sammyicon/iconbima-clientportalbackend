@@ -89,6 +89,7 @@ export class ClientPolicyCreation {
           
           -- Output the result
           :p_result := v_message;
+          :p_ent_code :=v_client_code;
         END;
       `;
 
@@ -111,6 +112,11 @@ export class ClientPolicyCreation {
           type: OracleDB.STRING,
           maxSize: 2000,
         },
+        p_ent_code: {
+          dir: OracleDB.BIND_OUT,
+          type: OracleDB.STRING,
+          maxSize: 2000,
+        },
       };
 
       // Execute the PL/SQL block
@@ -119,14 +125,17 @@ export class ClientPolicyCreation {
 
       // Send response
       return res.status(200).json({
+        sucess: true,
         message: "Client created successfully",
         data: result.outBinds,
       });
     } catch (error) {
       console.error("Error creating client:", error);
-      return res
-        .status(500)
-        .json({ error: "Failed to create client", details: error.message });
+      return res.status(500).json({
+        sucess: false,
+        error: "Failed to create client",
+        details: error.message,
+      });
     } finally {
       // Ensure the connection is always released back to the pool
       if (connection) {
@@ -289,6 +298,9 @@ export class ClientPolicyCreation {
                 p_tira_risk_code                => NULL,
                 p_broker_code                   => NULL
             );
+            :policy_no :=v_pl_no;
+            :policy_index := v_pl_index;
+          
         END;
       `;
 
@@ -386,6 +398,16 @@ export class ClientPolicyCreation {
           val: p_vehicle_type || null,
           type: OracleDB.STRING,
         },
+        policy_no: {
+          dir: OracleDB.BIND_OUT,
+          type: OracleDB.STRING,
+          maxSize: 2000,
+        },
+        policy_index: {
+          dir: OracleDB.BIND_OUT,
+          type: OracleDB.STRING,
+          maxSize: 2000,
+        },
       };
 
       // Execute the PL/SQL block
@@ -393,18 +415,21 @@ export class ClientPolicyCreation {
         autoCommit: true,
         outFormat: OracleDB.OUT_FORMAT_OBJECT,
       });
-      console.info("Policy created successfully:", result.rows);
+      console.info("Policy created successfully:", result.outBinds);
 
       // Send response
       return res.status(200).json({
+        sucess: true,
         message: "Policy created successfully",
-        data: (await result).rows,
+        data: result.outBinds,
       });
     } catch (error) {
       console.error("Error creating policy:", error);
-      return res
-        .status(500)
-        .json({ error: "Failed to create policy", details: error.message });
+      return res.status(500).json({
+        sucess: true,
+        error: "Failed to create policy",
+        details: error.message,
+      });
     } finally {
       // Ensure the connection is always released back to the pool
       if (connection) {
