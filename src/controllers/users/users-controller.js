@@ -1,6 +1,7 @@
 import pool from "../../config/oracledb-connect.js";
 import oracledb from "oracledb";
 import jwt from "jsonwebtoken";
+import OracleDB from "oracledb";
 
 class UserController {
   constructor() {}
@@ -231,6 +232,29 @@ class UserController {
       } catch (error) {
         console.error(error);
       }
+    }
+  }
+
+  async getUsers(req, res) {
+    let connection;
+    try {
+      const { createdBy } = req.body;
+      connection = (await pool).getConnection();
+      if (connection) {
+        console.log("Connected to the database");
+      }
+
+      const results = (await connection).execute(
+        `select ent_aent_code,ent_code,ent_name from all_entity where created_by =:created_by`,
+        [createdBy],
+        { outFormat: OracleDB.OUT_FORMAT_OBJECT }
+      );
+      return res
+        .status(200)
+        .json({ success: true, results: (await results).rows });
+    } catch (error) {
+      console.error("error", error);
+      return res.status(500).json({ success: false, error: error.message });
     }
   }
 }

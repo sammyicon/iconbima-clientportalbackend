@@ -158,7 +158,6 @@ export class ClientPolicyCreation {
         p_int_ent_code,
         p_assr_aent_code,
         p_assr_ent_code,
-
         p_fm_dt,
         p_to_dt,
         p_user_code,
@@ -191,122 +190,135 @@ export class ClientPolicyCreation {
 
       // PL/SQL Block with bind variables
       const plsqlBlock = `
-        DECLARE
-            v_pl_index     uw_policy.pl_index%TYPE;
-            v_pl_no        uw_policy.pl_no%TYPE;
-            v_bima_make    pkg_data.v_char_255%TYPE;
-            v_bima_model   pkg_data.v_char_255%TYPE;
-        BEGIN
-            -- Create the policy header
-            Pkg_uw_02.create_motor_policy (
-                p_org_code         => :p_org_code,
-                p_pr_code          => :p_pr_code,
-                p_int_aent_code    => :p_int_aent_code,
-                p_int_ent_code     => :p_int_ent_code,
-                p_int_site_code    => NULL,
-                p_assr_aent_code   => :p_assr_aent_code,
-                p_assr_ent_code    => :p_assr_ent_code,
-                p_assr_site_code   => NULL,
-                p_fm_dt            => :p_fm_dt,
-                p_to_dt            => :p_to_dt,
-                p_os_code          => :p_os_code,
-                p_created_by       => :p_user_code,
-                p_created_ip       => :p_created_ip,
-                p_commit           => 'Y',
-                p_ticket_index     => NULL,
-                p_index            => v_pl_index,
-                p_no               => v_pl_no
-            );
+        /* Formatted on 1/31/2025 11:04:23 AM (QP5 v5.336) */
+DECLARE
+    v_pl_index     uw_policy.pl_index%TYPE;
+    v_pl_no        uw_policy.pl_no%TYPE;
+    v_bima_make    pkg_data.v_char_255%TYPE;
+    v_bima_model   pkg_data.v_char_255%TYPE;
+BEGIN
+    -- Create the policy header
+    Pkg_uw_02.create_motor_policy (p_org_code         => :p_org_code,
+                                   p_pr_code          => :p_pr_code,
+                                   p_int_aent_code    => :p_int_aent_code,
+                                   p_int_ent_code     => :p_int_ent_code,
+                                   p_int_site_code    => NULL,
+                                   p_assr_aent_code   => :p_assr_aent_code,
+                                   p_assr_ent_code    => :p_assr_ent_code,
+                                   p_assr_site_code   => NULL,
+                                   p_fm_dt            => :p_fm_dt,
+                                   p_to_dt            => :p_to_dt,
+                                   p_os_code          => :p_os_code,
+                                   p_created_by       => :p_user_code,
+                                   p_created_ip       => :p_created_ip,
+                                   p_commit           => 'Y',
+                                   p_ticket_index     => NULL,
+                                   p_index            => v_pl_index,
+                                   p_no               => v_pl_no);
 
-            -- Validate make and model
-            BEGIN
-                SELECT sys_code
-                  INTO v_bima_make
-                  FROM ad_system_codes
-                 WHERE sys_type = 'AD_VEHICLE_MAKE'
-                   AND  (sys_name) =  :p_make
-                   AND ROWNUM = 1;
-            EXCEPTION
-                WHEN NO_DATA_FOUND THEN
-                    pkg_system_admin.add_sys_code (
-                        p_sys_type      => 'AD_VEHICLE_MAKE',
-                        p_sys_code      =>  :p_make,
-                        p_sys_name      => :p_make,
-                        p_sys_enabled   => 'Y',
-                        p_sys_desc      => :p_make,
-                        p_created_by    => :p_user_code,
-                        p_commit        => 'Y'
-                    );
-                    v_bima_make :=  (:p_make);
-            END;
+    -- Validate make and model
+    BEGIN
+        SELECT sys_code
+          INTO v_bima_make
+          FROM ad_system_codes
+         WHERE     sys_type = 'AD_VEHICLE_MAKE'
+               AND (sys_name) = :p_make
+               AND ROWNUM = 1;
+    EXCEPTION
+        WHEN NO_DATA_FOUND
+        THEN
+            pkg_system_admin.add_sys_code (p_sys_type      => 'AD_VEHICLE_MAKE',
+                                           p_sys_code      => :p_make,
+                                           p_sys_name      => :p_make,
+                                           p_sys_enabled   => 'Y',
+                                           p_sys_desc      => :p_make,
+                                           p_created_by    => :p_user_code,
+                                           p_commit        => 'Y');
+            v_bima_make := ( :p_make);
+    END;
 
-            BEGIN
-                SELECT sys_code
-                  INTO v_bima_model
-                  FROM ad_system_codes
-                 WHERE sys_type = 'AD_VEHICLE_MAKE'
-                   AND  (sys_name) =  :p_model
-                   AND ROWNUM = 1;
-            EXCEPTION
-                WHEN NO_DATA_FOUND THEN
-                    pkg_system_admin.add_sys_code (
-                        p_sys_type      => 'AD_VEHICLE_MAKE',
-                        p_sys_code      =>  :p_model,
-                        p_sys_name      => :p_model,
-                        p_sys_enabled   => 'Y',
-                        p_sys_desc      => :p_model,
-                        p_created_by    => :p_user_code,
-                        p_commit        => 'Y'
-                    );
-                    v_bima_model :=  (:p_model);
-            END;
+    BEGIN
+        SELECT sys_code
+          INTO v_bima_model
+          FROM ad_system_codes
+         WHERE     sys_type = 'AD_VEHICLE_MAKE'
+               AND (sys_name) = :p_model
+               AND ROWNUM = 1;
+    EXCEPTION
+        WHEN NO_DATA_FOUND
+        THEN
+            pkg_system_admin.add_sys_code (p_sys_type      => 'AD_VEHICLE_MAKE',
+                                           p_sys_code      => :p_model,
+                                           p_sys_name      => :p_model,
+                                           p_sys_enabled   => 'Y',
+                                           p_sys_desc      => :p_model,
+                                           p_created_by    => :p_user_code,
+                                           p_commit        => 'Y');
+            v_bima_model := ( :p_model);
+    END;
 
-            -- Insert vehicle details
-            pkg_uw_02.ins_vehicle_w (
-                p_org_code                      => :p_org_code,
-                p_pl_index                      => v_pl_index,
-                p_vehicle_regno                 => :p_regn_no,
-                p_vehicle_use                   => :p_vehicle_use,
-                p_vehicle_make                  => v_bima_make,
-                p_vehicle_model                 => v_bima_model,
-                p_vehicle_color                 => :p_color,
-                p_vehicle_engineno              => :p_engine_no,
-                p_vehicle_chassisno             => :p_chassis_no,
-                p_vehicle_manyear               => :p_yom,
-                p_vehicle_cc                    => :p_cc,
-                p_vehicle_passangers            => :p_seating_cap,
-                p_vehicle_value                 => :p_value,
-                p_vehicle_windscreen            => :p_windscreen_value,
-                p_vehicle_radio                 => :p_radio_value,
-                p_vehicle_pll                   => 0,
-                p_vehicle_premiumrate           => 0,
-                p_vehicle_overridepremiumrate   => 0,
-                p_vehicle_premium               => :p_premium,
-                p_vehicle_vat                   => :p_vat,
-                p_vehicle_grosspremium          => :p_premium,
-                p_created_by                    => :p_user_code,
-                p_created_ip                    => :p_created_ip,
-                p_policy_type                   => :p_vehicle_use,
-                p_cover_type                    => :p_cover_type,
-                p_order                         => 1,
-                p_debitnote_no                  => NULL,
-                p_sticker_no                    => NULL,
-                p_vehicle_type                  => :p_vehicle_type,
-                p_vehicle_weight                => NULL,
-                p_risknote_no                   => NULL,
-                p_covernote_no                  => NULL,
-                p_tira_risk_code                => NULL,
-                p_broker_code                   => NULL
-            );
-            :policy_no :=v_pl_no;
-            :policy_index := v_pl_index;
-          
-        END;
-      `;
+    -- Insert vehicle details
+    pkg_uw_02.ins_vehicle_w (
+        p_org_code                      => :p_org_code,
+        p_pl_index                      => v_pl_index,
+        p_vehicle_regno                 => :p_regn_no,
+        p_vehicle_use                   => :p_vehicle_use,
+        p_vehicle_make                  => v_bima_make,
+        p_vehicle_model                 => v_bima_model,
+        p_vehicle_color                 => :p_color,
+        p_vehicle_engineno              => :p_engine_no,
+        p_vehicle_chassisno             => :p_chassis_no,
+        p_vehicle_manyear               => :p_yom,
+        p_vehicle_cc                    => :p_cc,
+        p_vehicle_passangers            => :p_seating_cap,
+        p_vehicle_value                 => :p_value,
+        p_vehicle_windscreen            => :p_windscreen_value,
+        p_vehicle_radio                 => :p_radio_value,
+        p_vehicle_pll                   => 0,
+        p_vehicle_premiumrate           => 0,
+        p_vehicle_overridepremiumrate   => 0,
+        p_vehicle_premium               => :p_premium,
+        p_vehicle_vat                   => :p_vat,
+        p_vehicle_grosspremium          => :p_premium,
+        p_created_by                    => :p_user_code,
+        p_created_ip                    => :p_created_ip,
+        p_policy_type                   => :p_vehicle_use,
+        p_cover_type                    => :p_cover_type,
+        p_order                         => 1,
+        p_debitnote_no                  => NULL,
+        p_sticker_no                    => NULL,
+        p_vehicle_type                  => :p_vehicle_type,
+        p_vehicle_weight                => NULL,
+        p_risknote_no                   => NULL,
+        p_covernote_no                  => NULL,
+        p_tira_risk_code                => NULL,
+        p_broker_code                   => NULL);
+    :policy_no := v_pl_no;
+    :policy_index := v_pl_index;
+
+BEGIN
+    pkg_premium.calc_premium_nb (p_org_code    => :p_org_code,
+                                 p_pl_index    => v_pl_index,
+                                 p_user_code   => :p_user_code,
+                                 p_user_ip     => :p_created_ip,
+                                 p_commit      => 'Y');
+END;
+
+BEGIN
+    pkg_endorse.approve_newbiz (p_org_code     => :p_org_code,
+                                p_pl_index     => v_pl_index,
+                                p_created_by   => :p_user_code,
+                                p_created_ip   => :p_created_ip,
+                                p_commit       => 'Y');
+END;
+END;
+
+`;
 
       // Bind variables
       const binds = {
         p_org_code: { val: "50", type: OracleDB.STRING },
+        // p_created_ip: { val: p_created_ip || null, type: OracleDB.STRING },
         p_pr_code: { val: p_pr_code || null, type: OracleDB.STRING },
         p_os_code: { val: p_os_code, type: OracleDB.STRING },
         p_int_aent_code: {
