@@ -379,8 +379,8 @@ ORDER BY pr_int_aent_code, pr_intermediary, pr_pl_no DESC`,
             p_intermediary: clientCode,
             p_org_code: "50",
             p_currency: "",
-            p_fm_dt: fromDate,
-            p_to_dt: toDate,
+            p_fm_dt: new Date(fromDate),
+            p_to_dt: new Date(toDate),
             p_branch: "",
           }
         );
@@ -417,7 +417,7 @@ ORDER BY pr_int_aent_code, pr_intermediary, pr_pl_no DESC`,
     } finally {
       try {
         if (connection) {
-          (await connection).close();
+          (await connection).release();
           console.info("Connection closed successfully");
         }
       } catch (error) {

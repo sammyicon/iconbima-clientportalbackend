@@ -2,6 +2,10 @@ import pool from "../../config/oracledb-connect.js";
 import oracledb from "oracledb";
 import jwt from "jsonwebtoken";
 import OracleDB from "oracledb";
+import {
+  CUSTOMER_STATEMENT_REPORT_QUERY,
+  getCustomerRunningBal,
+} from "./gl-statements-query.js";
 
 class UserController {
   constructor() {}
@@ -257,6 +261,88 @@ class UserController {
       return res.status(500).json({ success: false, error: error.message });
     }
   }
+
+  async getEntityBalance(req, res) {
+    let connection;
+    try {
+      const { intermediaryCode, clientCode, fromDate, toDate, currency } = req.body; // Extract currency from request
+      console.log("Request Data:", req.body);
+  
+      connection = await (await pool).getConnection();
+      console.log("Database is connected");
+  
+      if (!currency) {
+        return res.status(400).json({ error: "Currency is required" });
+      }
+  
+      if (!["KSH", "USD"].includes(currency)) {
+        return res.status(400).json({ error: "Invalid currency. Allowed: KSH, USD" });
+      }
+  
+      if (["15", "70", "25"].includes(intermediaryCode)) {
+        const results = await connection.execute(
+          CUSTOMER_STATEMENT_REPORT_QUERY,
+          {
+            p_category: intermediaryCode,
+            p_intermediary: clientCode,
+            p_org_code: "50",
+            p_currency: currency, // Use the currency from request body
+            p_fm_dt: new Date(fromDate),
+            p_to_dt: new Date(toDate),
+          },
+          { outFormat: OracleDB.OUT_FORMAT_OBJECT }
+        );
+  
+        const formattedData = results.rows || [];
+  
+        // Step 1: Fetch the initial balance for the requested currency
+        let outstandingBalance = await getCustomerRunningBal(
+          "50",
+          intermediaryCode,
+          clientCode,
+          new Date(fromDate),
+          currency
+        );
+  
+        outstandingBalance = outstandingBalance || 0; // Ensure it's a number
+       
+  
+        // Step 2: Process transactions and update outstanding balance
+        for (const item of formattedData) {
+          if (item.TRN_CUR_CODE !== currency) continue; // Only process the requested currency
+  
+          let policy_net = item.GROSS_PREM - item.COMM_AMOUNT + item.WTAX_AMOUNT;
+          let credit_net = item.CREDIT_NET;
+  
+          if (item.TRN_DRCR_FLAG === "C") {
+            policy_net *= -1;
+            credit_net *= -1;
+          }
+  
+          // Update the outstanding balance
+          outstandingBalance += policy_net + credit_net;
+  
+        
+        }
+  
+  
+        return res.status(200).json({
+          last_outstanding_balance: { [currency]: outstandingBalance }
+        });
+      } else {
+        return res.status(400).json({ error: "Invalid intermediary code" });
+      }
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    } finally {
+      if (connection) {
+        connection.close();
+        console.info("Connection closed successfully");
+      }
+    }
+  }
+  
 }
 
 const userController = new UserController();

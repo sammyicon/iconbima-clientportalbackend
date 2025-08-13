@@ -17,6 +17,7 @@ import expectedRenewalsRouter from "./routes/expectedRenewalsRouter.js";
 import travelCertRouter from "./routes/travel-cert.route.js";
 import userRouter from "./routes/user-routes.js";
 import clientPolicyRouter from "./routes/client-policy-creation-route.js";
+import marineRouter from "./routes/marinePolicy.route.js";
 
 const app = Express();
 app.use(cors());
@@ -46,3 +47,4 @@ app.use("/upcomingRenewals", upcomingRenewalsRouter);
 app.use("/expectedRenewals", expectedRenewalsRouter);
 app.use("/travel", travelCertRouter);
 app.use("/policy", clientPolicyRouter);
+app.use("/marine", marineRouter);

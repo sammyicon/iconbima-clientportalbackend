@@ -90,8 +90,8 @@ ORDER BY hd_gl_date`,
           {
             p_banked: "N",
             p_org_code: "50",
-            p_fm_dt: fromDate,
-            p_to_dt: toDate,
+            p_fm_dt: new Date(fromDate),
+            p_to_dt: new Date(toDate),
             intermediaryCode: intermediaryCode,
             clientCode: clientCode,
           }
@@ -173,8 +173,8 @@ ORDER BY hd_gl_date`,
           {
             p_banked: "N",
             p_org_code: "50",
-            p_fm_dt: fromDate,
-            p_to_dt: toDate,
+            p_fm_dt: new Date(fromDate),
+            p_to_dt: new Date(toDate),
             intermediaryCode: intermediaryCode,
             clientCode: clientCode,
           }

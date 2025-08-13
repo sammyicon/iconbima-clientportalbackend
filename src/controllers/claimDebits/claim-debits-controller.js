@@ -8,7 +8,7 @@ class ClaimDebitsController {
     let connection;
     let results;
     try {
-      const { intermediaryCode, clientCode } = req.body;
+      const { intermediaryCode, clientCode, fromDate, toDate } = req.body;
       console.log(req.body);
       connection = (await pool).getConnection();
       console.log("Database is connected");
@@ -18,7 +18,8 @@ class ClaimDebitsController {
         intermediaryCode === "25"
       ) {
         results = (await connection).execute(
-          `SELECT row_num                          rec_id,
+          `/* Formatted on 3/21/2025 8:44:44 AM (QP5 v5.336) */
+SELECT row_num                          rec_id,
        trn_org_code,
        trn_sys_no,
        trn_doc_type,
@@ -43,7 +44,8 @@ class ClaimDebitsController {
        pl_assr_aent_code,
        pl_assr_ent_code,
        insured_name_xx,
-       vehicle_no,end_index
+       vehicle_no,
+       end_index
   FROM (  SELECT ROW_NUMBER () OVER (ORDER BY trn_sys_no)
                      AS row_num,
                  trn_org_code,
@@ -86,7 +88,9 @@ class ClaimDebitsController {
                                                    pl_assr_ent_code)
                      insured_name_xx,
                  v.AI_REGN_NO
-                     vehicle_no,trn_end_index end_index
+                     vehicle_no,
+                 trn_end_index
+                     end_index
             FROM gl_transactions, uw_policy, ai_vehicle v
            WHERE     trn_org_code = :org_code
                  AND pl_index = v.AI_PL_INDEX
@@ -96,7 +100,7 @@ class ClaimDebitsController {
                  AND pl_int_aent_code = NVL ( :int_aent_code, pl_int_aent_code)
                  AND pl_int_ent_code = NVL ( :int_ent_code, pl_int_ent_code)
                  AND trn_cur_code = NVL ( :cur_code, trn_cur_code)
-                 AND TRUNC (trn_doc_gl_dt) >= ADD_MONTHS (TRUNC (SYSDATE), -12)
+                 AND TRUNC (trn_doc_gl_dt) BETWEEN :p_fm_dt AND :p_to_dt
         ORDER BY gl_transactions.created_on DESC)
         
  `,
@@ -105,11 +109,14 @@ class ClaimDebitsController {
             int_ent_code: clientCode,
             org_code: "50",
             cur_code: "",
+            p_fm_dt: new Date(fromDate),
+            p_to_dt: new Date(toDate),
           }
         );
       } else {
         results = (await connection).execute(
-          `SELECT row_num                          rec_id,
+          `/* Formatted on 3/21/2025 8:44:44 AM (QP5 v5.336) */
+SELECT row_num                          rec_id,
        trn_org_code,
        trn_sys_no,
        trn_doc_type,
@@ -134,7 +141,8 @@ class ClaimDebitsController {
        pl_assr_aent_code,
        pl_assr_ent_code,
        insured_name_xx,
-       vehicle_no,end_index
+       vehicle_no,
+       end_index
   FROM (  SELECT ROW_NUMBER () OVER (ORDER BY trn_sys_no)
                      AS row_num,
                  trn_org_code,
@@ -177,7 +185,9 @@ class ClaimDebitsController {
                                                    pl_assr_ent_code)
                      insured_name_xx,
                  v.AI_REGN_NO
-                     vehicle_no,trn_end_index end_index
+                     vehicle_no,
+                 trn_end_index
+                     end_index
             FROM gl_transactions, uw_policy, ai_vehicle v
            WHERE     trn_org_code = :org_code
                  AND pl_index = v.AI_PL_INDEX
@@ -187,14 +197,16 @@ class ClaimDebitsController {
                  AND pl_int_aent_code = NVL ( :int_aent_code, pl_int_aent_code)
                  AND pl_int_ent_code = NVL ( :int_ent_code, pl_int_ent_code)
                  AND trn_cur_code = NVL ( :cur_code, trn_cur_code)
-                 AND TRUNC (trn_doc_gl_dt) >= ADD_MONTHS (TRUNC (SYSDATE), -12)
-        ORDER BY gl_transactions.created_on DESC)   
+                 AND TRUNC (trn_doc_gl_dt) BETWEEN :p_fm_dt AND :p_to_dt
+        ORDER BY gl_transactions.created_on DESC)  
  `,
           {
             assr_aent_code: intermediaryCode,
             assr_ent_code: clientCode,
             org_code: "50",
             cur_code: "",
+            p_fm_dt: new Date(fromDate),
+            p_to_dt: new Date(toDate),
           }
         );
       }

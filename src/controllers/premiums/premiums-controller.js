@@ -157,8 +157,8 @@ class PremiumController {
        AND a.pr_int_aent_code = NVL ( :intermediaryCode, a.pr_int_aent_code)
        AND a.pr_int_ent_code = NVL ( :clientCode, a.pr_int_ent_code)`,
           {
-            p_fm_dt: fromDate,
-            p_to_dt: toDate,
+            p_fm_dt: new Date(fromDate),
+            p_to_dt: new Date(toDate),
             intermediaryCode: intermediaryCode,
             clientCode: clientCode,
           }
@@ -308,8 +308,8 @@ class PremiumController {
            NVL ( :intermediaryCode, a.PR_ASSR_AENT_CODE)
        AND a.PR_ASSR_ENT_CODE = NVL ( :clientCode, a.PR_ASSR_ENT_CODE)`,
           {
-            p_fm_dt: fromDate,
-            p_to_dt: toDate,
+            p_fm_dt: new Date(fromDate),
+            p_to_dt: new Date(toDate),
             intermediaryCode: intermediaryCode,
             clientCode: clientCode,
           }

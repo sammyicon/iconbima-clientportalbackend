@@ -1,23 +1,8 @@
+import OracleDB from "oracledb";
 import pool from "../../config/oracledb-connect.js";
-import { config } from "dotenv";
-config();
 
-class GLstatements {
-  async getGlStatements(req, res) {
-    let connection;
-    let results;
-    try {
-      const { intermediaryCode, clientCode, fromDate, toDate } = req.body;
-      console.log(req.body);
-      connection = (await pool).getConnection();
-      console.log("Database is connected");
-      if (
-        intermediaryCode === "15" ||
-        intermediaryCode === "70" ||
-        intermediaryCode === "25"
-      ) {
-        results = (await connection).execute(
-          ` SELECT order_flag,
+export const CUSTOMER_STATEMENT_REPORT_QUERY = `/* Formatted on 3/14/2025 9:46:48 AM (QP5 v5.336) */
+  SELECT order_flag,
          trn_org_code,
          ent_aent_code,
          ent_code,
@@ -44,6 +29,8 @@ class GLstatements {
              trn_class_name,
          trn_product_code,
          trn_product_name,
+         trn_product_name
+             sub_class,
          trn_doc_no,
          trn_debit_no,
          trn_doc_type,
@@ -238,10 +225,12 @@ class GLstatements {
                  AND a.trn_type IN ('UW.003', 'UW.003R')
                  AND a.trn_doc_type = 'UW-POLICY'
                  AND a.trn_org_code = :p_org_code
-                 AND TRUNC (a.trn_doc_gl_dt) BETWEEN (NVL ( :p_fm_dt,
-                                                           a.trn_doc_gl_dt))
-                                                 AND (NVL ( :p_to_dt,
-                                                           a.trn_doc_gl_dt))
+                 AND TRUNC (a.trn_doc_gl_dt) BETWEEN TRUNC (
+                                                         NVL ( :p_fm_dt,
+                                                              a.trn_doc_gl_dt))
+                                                 AND TRUNC (
+                                                         NVL ( :p_to_dt,
+                                                              a.trn_doc_gl_dt))
                  AND b.ent_aent_code = NVL ( :p_category, ent_aent_code)
                  AND b.ent_code = NVL ( :p_intermediary, ent_code)
                  AND a.trn_cur_code = NVL ( :p_currency, trn_cur_code)
@@ -307,17 +296,42 @@ class GLstatements {
                      THEN
                             trn_flex01
                          || ' '
-                         || (SELECT DISTINCT
-                                    DECODE (
-                                        LISTAGG (do_doc_no, ', ')
-                                            WITHIN GROUP (ORDER BY do_doc_no),
-                                        NULL, NULL,
-                                           'For Policy No: '
-                                        || LISTAGG (do_doc_no, ', ')
-                                           WITHIN GROUP (ORDER BY do_doc_no))
-                               FROM ar_receipt_docs d
-                              WHERE     d.do_org_code = rcp.trn_org_code
-                                    AND d.do_hd_no = rcp.trn_doc_no)
+                         || (  SELECT (CASE
+                                           WHEN COUNT (DISTINCT do_doc_no) > 10
+                                           THEN
+                                               'For Various Policies'
+                                           WHEN COUNT (DISTINCT do_doc_no) = 0
+                                           THEN
+                                               NULL
+                                           ELSE
+                                                  'For Policy No: '
+                                               || (  SELECT LISTAGG (do_doc_no,
+                                                                     ', ')
+                                                            WITHIN GROUP (ORDER BY
+                                                                              do_doc_no)
+                                                       FROM (SELECT DISTINCT
+                                                                    do_doc_no,
+                                                                    do_hd_no
+                                                               FROM ar_receipt_docs
+                                                                    d
+                                                              WHERE     d.do_org_code =
+                                                                        rcp.trn_org_code
+                                                                    AND d.do_hd_no =
+                                                                        rcp.trn_doc_no
+                                                                    AND ROWNUM <=
+                                                                        10)
+                                                   GROUP BY do_hd_no)
+                                       END)
+                                 /*DISTINCT
+                                        DECODE (
+                                            LISTAGG (do_doc_no, ', ') WITHIN GROUP (ORDER BY do_doc_no),
+                                            NULL, NULL,
+                                               'For Policy No: '
+                                            || LISTAGG (do_doc_no, ', ') WITHIN GROUP (ORDER BY do_doc_no))*/
+                                 FROM ar_receipt_docs d
+                                WHERE     d.do_org_code = rcp.trn_org_code
+                                      AND d.do_hd_no = rcp.trn_doc_no
+                             GROUP BY d.do_hd_no)
                      ELSE
                          rcp.trn_narration
                  END                                     trn_narration,
@@ -349,127 +363,78 @@ class GLstatements {
                                           'CM-CLAIMS',
                                           'AP-PAYMENT-NS')
                  AND rcp.trn_org_code = :p_org_code
-                 AND TRUNC (rcp.trn_doc_gl_dt) BETWEEN  (
+                 AND TRUNC (rcp.trn_doc_gl_dt) BETWEEN TRUNC (
                                                            NVL (
                                                                :p_fm_dt,
                                                                rcp.trn_doc_gl_dt))
-                                                   AND  (
+                                                   AND TRUNC (
                                                            NVL (
                                                                :p_to_dt,
                                                                rcp.trn_doc_gl_dt))
                  AND b.ent_aent_code = NVL ( :p_category, ent_aent_code)
                  AND b.ent_code = NVL ( :p_intermediary, ent_code)
-                 AND rcp.trn_cur_code = NVL ( :p_currency, trn_cur_code)
-          UNION ALL
-          SELECT 3                                       order_flag,
-                 :p_org_code                             trn_org_code,
-                 b.ent_aent_code,
-                 b.ent_code,
-                 b.ent_name,
-                 NULL                                    trn_product_code,
-                 NULL                                    trn_product_name,
-                 'OPENING BALANCE'                       trn_doc_no,
-                 NULL                                    trn_debit_no,
-                 NULL                                    trn_doc_type,
-                 NULL                                    trn_type,
-                 NULL                                    trn_doc_gl_dt,
-                 NULL                                    trn_os_code,
-                 (SELECT DISTINCT
-                         NVL (
-                             DECODE (os_type,
-                                     'Branch', os_code,
-                                     os_ref_os_code),
-                             '100')
-                    FROM hi_org_structure o, all_entity e
-                   WHERE     e.ent_os_code = o.os_code(+)
-                         AND e.ent_aent_code = b.ent_aent_code
-                         AND e.ent_code = b.ent_code)    trn_branch_code,
-                 NULL                                    trn_fin_code,
-                 NULL                                    trn_per_code,
-                 NULL                                    trn_narration,
-                 NULL                                    trn_policy_no,
-                 NULL                                    trn_policy_index,
-                 NULL                                    trn_end_no,
-                 NULL                                    trn_end_index,
-                 NULL                                    trn_drcr_flag,
-                 NULL                                    trn_cur_code,
-                 NULL                                    trn_cur_rate,
-                 0                                       gross_prem,
-                 0                                       pvt_amount,
-                 0                                       sd_amount,
-                 0                                       tl_amount,
-                 0                                       phc_amount,
-                 0                                       comm_amount,
-                 0                                       wtax_amount,
-                 0                                       credit_net
-            FROM all_entity b
-           WHERE     b.ent_aent_code = NVL ( :p_category, ent_aent_code)
-                 AND b.ent_code = NVL ( :p_intermediary, ent_code))
-   WHERE     trn_branch_code = NVL ( :p_branch, trn_branch_code)
-         AND trn_doc_no NOT IN
-                 (SELECT hd_no
-                    FROM gl_je_header
-                   WHERE     hd_org_code = :p_org_code
-                         AND hd_type = 'REVALUATION'
-                         AND :p_currency =
-                             pkg_gl.get_org_base_curr ( :p_org_code))
-ORDER BY order_flag, trn_product_name, trn_doc_gl_dt`,
-          {
-            p_category: intermediaryCode,
-            p_intermediary: clientCode,
-            p_org_code: "50",
-            p_currency: "KSH",
-            p_fm_dt: new Date(fromDate),
-            p_to_dt: new Date(toDate),
-            p_branch: "",
-          }
-        );
-      } else {
-        return res.status(200).json({ success: false, results: [] });
-      }
-      if ((await results).rows && (await results).rows.length > 0) {
-        const formattedData = (await results).rows?.map((row) => ({
-          issueDate: row[13],
-          docNo: row[9],
-          endNo: row[21],
-          debitNo: row[10],
-          vehicles: row[5],
-          insured: row[18],
-          drCr: row[23],
-          currency: row[24],
-          premium: row[26],
-          PVTprem: row[28],
-          stampDuty: row[29],
-          trainingLevy: row[30],
-          PHCfund: row[31],
-          comm: row[32],
-          Wtax: row[33],
-          policyNet: row[17],
-          creditNet: row[34],
-          outstanding: row[9],
-        }));
-        res.json({
-          success: true,
-          results: formattedData,
-        });
-      } else {
-        return res.status(200).json({ success: false, results: [] });
-      }
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json(error);
-    } finally {
+                 AND rcp.trn_cur_code = NVL ( :p_currency, trn_cur_code))
+   WHERE trn_doc_no NOT IN
+             (SELECT hd_no
+                FROM gl_je_header
+               WHERE     hd_org_code = :p_org_code
+                     AND hd_type = 'REVALUATION'
+                     AND :p_currency = pkg_gl.get_org_base_curr ( :p_org_code))
+ORDER BY order_flag, trn_product_name, trn_doc_gl_dt`;
+
+export async function getCustomerRunningBal(
+  p_org_code,
+  ent_aent_code,
+  ent_code,
+  p_fm_dt,
+  p_currency
+) {
+  let connection;
+  try {
+    connection = (await pool).getConnection();
+    if (connection) {
+      console.log("database connected successfully");
+    }
+    const results = (await connection).execute(
+      `DECLARE
+    v_balance   NUMBER;
+BEGIN
+    pkg_cust.get_entity_balance (p_org_code       => :p_org_code,
+                                 p_category       => :ent_aent_code,
+                                 p_intermediary   => :ent_code,
+                                 p_fm_dt          => TRUNC ( :p_fm_dt),
+                                 p_currency       => :p_currency,
+                                 p_balance        => v_balance);
+    :balance := v_balance;
+END;`,
+      {
+        p_org_code,
+        ent_aent_code,
+        ent_code,
+        p_fm_dt: new Date(p_fm_dt),
+        p_currency,
+        balance: {
+          dir: OracleDB.BIND_OUT,
+          type: OracleDB.NUMBER,
+          maxSize: 2000,
+        },
+      },
+      { outFormat: OracleDB.OUT_FORMAT_OBJECT }
+    );
+    console.log("Opening Balance from query:", (await results).outBinds.balance);
+
+    return (await results).outBinds.balance;
+  } catch (error) {
+    console.error("error getting balance", error);
+  } finally {
+    // Release the connection back to the pool
+    if (connection) {
       try {
-        if (connection) {
-          (await connection).close();
-          console.info("Connection closed successfully");
-        }
-      } catch (error) {
-        console.error(error);
+        (await connection).release();
+      } catch (err) {
+        console.error("Error closing connection", err);
       }
     }
   }
 }
 
-const glStatements = new GLstatements();
-export default glStatements;

@@ -75,4 +75,108 @@ export class TravelInsuranceService {
       }
     }
   }
+
+  static calculatePremiums(req, res) {
+    try {
+      const { policyPayload } = req.body;
+      const { duration, otherTravellers, policyProductCode } =
+        policyPayload.policyDetails;
+
+      // Map your cover codes to coverage names
+      const coverageMap = {
+        140: "SCHENGEN",
+        141: "BUDGET",
+        142: "GLOBAL_BASIC",
+        143: "GLOBAL_PLUS",
+        144: "GLOBAL_EXTRA",
+      };
+
+      const coverageType = coverageMap[policyProductCode];
+      if (!coverageType) {
+        return res.status(400).json({ error: "Invalid cover code" });
+      }
+
+      // Determine if it's Family or Individual
+      const isFamily = otherTravellers.length > 0 ? "Family" : "Individual";
+
+      // Premium table (USD values from your brochure)
+      const premiumTable = {
+        BUDGET: {
+          Individual: [12, 16, 22, 24, 25, 39, 60, 79, 95, 133, 241, 333],
+          Family: [28, 37, 51, 55, 58, 90, 137, 183, 220, 305, 553, 767],
+        },
+        SCHENGEN: {
+          Individual: [13, 17, 24, 25, 27, 34, 66, 85, 101, 129, 191, 265],
+          Family: [29, 39, 55, 57, 60, 77, 149, 192, 229, 293, 434, 603],
+        },
+        GLOBAL_BASIC: {
+          Individual: [19, 22, 31, 34, 37, 48, 84, 108, 163, 209, 316, 438],
+          Family: [43, 51, 72, 77, 84, 111, 192, 248, 375, 481, 727, 1008],
+        },
+        GLOBAL_PLUS: {
+          Individual: [23, 30, 37, 40, 42, 61, 99, 128, 207, 265, 401, 556],
+          Family: [53, 70, 85, 91, 96, 140, 228, 294, 475, 611, 923, 1279],
+        },
+        GLOBAL_EXTRA: {
+          Individual: [26, 35, 42, 43, 48, 70, 111, 144, 237, 305, 461, 639],
+          Family: [60, 80, 97, 98, 110, 161, 256, 331, 546, 701, 1060, 1469],
+        },
+      };
+
+      // Match duration to table index
+      const durationBrackets = [
+        4, // Up to 4 days
+        7, // Up to 7 days
+        10, // Up to 10 days
+        15, // Up to 15 days
+        21, // Up to 21 days
+        30, // Up to 30 days
+        60, // Up to 60 days
+        90, // Up to 90 days
+        1801, // Up to 180(1) days, Maximum 92 consecutive days
+        3651, // 1 year(1) multi-trip, , Maximum 92 consecutive days
+        1802, // Up to 180(2) days, Maximum 180 consecutive days
+        3652, // 1 year(2) multi-trip, Maximum 180 consecutive days
+      ];
+
+      let index = durationBrackets.findIndex((max) => duration <= max);
+      if (index === -1) {
+        return res.status(400).json({ error: "Duration not supported" });
+      }
+
+      // Get premium
+      const premium = premiumTable[coverageType][isFamily][index];
+
+      const taxRate = 0.16;
+      const stampDutyUSD = 2;
+      const taxUSD = +(premium * taxRate).toFixed(2);
+
+      const chargeForeign = {
+        tax: taxUSD,
+        stampDuty: stampDutyUSD,
+      };
+
+      // 3. Convert to KES
+      const exchangeRate = 130;
+      const premiumLocal = +(premium * exchangeRate).toFixed(2);
+
+      const chargeLocal = {
+        tax: +(taxUSD * exchangeRate).toFixed(2),
+        stampDuty: +(stampDutyUSD * exchangeRate).toFixed(2),
+      };
+
+      // Return result
+      return res.status(200).json({
+        premiumForeign: premium,
+        premiumLocal,
+        charges: {
+          chargeForeign,
+          chargeLocal,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Error calculating premium" });
+    }
+  }
 }

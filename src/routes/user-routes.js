@@ -12,4 +12,7 @@ userRouter.post("/user-roles", (req, res) => {
 userRouter.post("/clients", (req, res) => {
   userController.getUsers(req, res);
 });
+userRouter.post("/balance", (req, res) => {
+  userController.getEntityBalance(req, res);
+});
 export default userRouter;

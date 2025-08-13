@@ -381,8 +381,8 @@ ORDER BY pr_org_code, pr_pl_index, pr_end_index`,
           {
             p_currency: "",
             p_org_code: "50",
-            p_fm_dt: fromDate,
-            p_to_dt: toDate,
+            p_fm_dt: new Date(fromDate),
+            p_to_dt: new Date(toDate),
             intermediaryCode: intermediaryCode,
             clientCode: clientCode,
           }
@@ -755,8 +755,8 @@ ORDER BY pr_org_code, pr_pl_index, pr_end_index`,
           {
             p_currency: "",
             p_org_code: "50",
-            p_fm_dt: fromDate,
-            p_to_dt: toDate,
+            p_fm_dt: new Date(fromDate),
+            p_to_dt: new Date(toDate),
             intermediaryCode: intermediaryCode,
             clientCode: clientCode,
           }
