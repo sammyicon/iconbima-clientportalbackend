@@ -79,13 +79,13 @@ export class TravelInsuranceService {
   static calculatePremiums(req, res) {
     try {
       const { policyPayload } = req.body;
-      const { duration, otherTravellers, policyProductCode } =
+      const { duration, otherTravellers, policyProductCode, dob } =
         policyPayload.policyDetails;
 
       // Map your cover codes to coverage names
       const coverageMap = {
-        140: "SCHENGEN",
-        141: "BUDGET",
+        140: "BUDGET",
+        141: "SCHENGEN",
         142: "GLOBAL_BASIC",
         143: "GLOBAL_PLUS",
         144: "GLOBAL_EXTRA",
@@ -95,9 +95,6 @@ export class TravelInsuranceService {
       if (!coverageType) {
         return res.status(400).json({ error: "Invalid cover code" });
       }
-
-      // Determine if it's Family or Individual
-      const isFamily = otherTravellers.length > 0 ? "Family" : "Individual";
 
       // Premium table (USD values from your brochure)
       const premiumTable = {
@@ -144,21 +141,59 @@ export class TravelInsuranceService {
         return res.status(400).json({ error: "Duration not supported" });
       }
 
-      // Get premium
-      const premium = premiumTable[coverageType][isFamily][index];
+      // Function to calculate age
+      const calcAge = (dobStr) => {
+        const birthDate = new Date(dobStr);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        return age;
+      };
 
+      // Function to get age multiplier
+      const getAgeMultiplier = (age, coverageType) => {
+        if (age < 18) return 0.5; // Children
+        if (age >= 66 && age <= 75) return 1.5;
+        if (age >= 76 && age <= 80) return 2;
+        if (age >= 81 && coverageType === "SCHENGEN") return 4;
+        return 1; // Default adult 18–65
+      };
+
+      // Calculate total premium for all travelers
+      let totalPremiumUSD = 0;
+
+      // Principal traveler
+      const principalAge = calcAge(dob);
+      const principalBasePremium =
+        premiumTable[coverageType]["Individual"][index];
+      totalPremiumUSD +=
+        principalBasePremium * getAgeMultiplier(principalAge, coverageType);
+
+      // Additional travelers
+      if (Array.isArray(otherTravellers) && otherTravellers.length > 0) {
+        otherTravellers.forEach((trav) => {
+          const age = calcAge(trav.dob);
+          const base = premiumTable[coverageType]["Individual"][index];
+          totalPremiumUSD += base * getAgeMultiplier(age, coverageType);
+        });
+      }
+
+      // Tax and charges
       const taxRate = 0.16;
       const stampDutyUSD = 2;
-      const taxUSD = +(premium * taxRate).toFixed(2);
+      const taxUSD = +(totalPremiumUSD * taxRate).toFixed(2);
 
       const chargeForeign = {
         tax: taxUSD,
         stampDuty: stampDutyUSD,
       };
 
-      // 3. Convert to KES
+      // Convert to KES
       const exchangeRate = 130;
-      const premiumLocal = +(premium * exchangeRate).toFixed(2);
+      const premiumLocal = +(totalPremiumUSD * exchangeRate).toFixed(2);
 
       const chargeLocal = {
         tax: +(taxUSD * exchangeRate).toFixed(2),
@@ -167,7 +202,7 @@ export class TravelInsuranceService {
 
       // Return result
       return res.status(200).json({
-        premiumForeign: premium,
+        premiumForeign: +totalPremiumUSD.toFixed(2),
         premiumLocal,
         charges: {
           chargeForeign,
