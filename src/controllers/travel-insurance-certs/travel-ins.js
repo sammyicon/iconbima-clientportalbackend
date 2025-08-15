@@ -79,7 +79,7 @@ export class TravelInsuranceService {
   static calculatePremiums(req, res) {
     try {
       const { policyPayload } = req.body;
-      const { duration, otherTravellers, policyProductCode, dob } =
+      const { duration, otherTravellers, policyProductCode, dob, tripType } =
         policyPayload.policyDetails;
 
       // Map your cover codes to coverage names
@@ -120,24 +120,37 @@ export class TravelInsuranceService {
         },
       };
 
-      // Match duration to table index
+      // Duration brackets mapping (indexes correspond to premiumTable arrays)
       const durationBrackets = [
-        4, // Up to 4 days
-        7, // Up to 7 days
-        10, // Up to 10 days
-        15, // Up to 15 days
-        21, // Up to 21 days
-        30, // Up to 30 days
-        60, // Up to 60 days
-        90, // Up to 90 days
-        1801, // Up to 180(1) days, Maximum 92 consecutive days
-        3651, // 1 year(1) multi-trip, , Maximum 92 consecutive days
-        1802, // Up to 180(2) days, Maximum 180 consecutive days
-        3652, // 1 year(2) multi-trip, Maximum 180 consecutive days
+        4, // index 0
+        7, // index 1
+        10, // index 2
+        15, // index 3
+        21, // index 4
+        30, // index 5
+        60, // index 6
+        90, // index 7
+        180, // index 8 (multi-trip: max 92 days each)
+        365, // index 9 (multi-trip annual)
+        180, // index 10 (continuous trip)
+        365, // index 11 (continuous annual)
       ];
 
-      let index = durationBrackets.findIndex((max) => duration <= max);
-      if (index === -1) {
+      // Special handling for 180/365 cases
+      let index;
+      if (duration > 90) {
+        if (tripType === "MULTI_TRIP") {
+          if (duration <= 180) index = 8;
+          else if (duration <= 365) index = 9;
+        } else if (tripType === "CONTINUOUS") {
+          if (duration <= 180) index = 10;
+          else if (duration <= 365) index = 11;
+        }
+      } else {
+        index = durationBrackets.findIndex((max) => duration <= max);
+      }
+
+      if (index === undefined || index === -1) {
         return res.status(400).json({ error: "Duration not supported" });
       }
 
