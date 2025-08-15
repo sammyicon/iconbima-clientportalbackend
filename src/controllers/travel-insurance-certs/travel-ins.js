@@ -82,7 +82,7 @@ export class TravelInsuranceService {
       const { duration, otherTravellers, policyProductCode, dob, tripType } =
         policyPayload.policyDetails;
 
-      // Map your cover codes to coverage names
+      // Map cover codes to coverage names
       const coverageMap = {
         140: "BUDGET",
         141: "SCHENGEN",
@@ -96,7 +96,7 @@ export class TravelInsuranceService {
         return res.status(400).json({ error: "Invalid cover code" });
       }
 
-      // Premium table (USD values from your brochure)
+      // Premium table (FINAL total USD including 0.50 USD stamp duty + 16% VAT)
       const premiumTable = {
         BUDGET: {
           Individual: [12, 16, 22, 24, 25, 39, 60, 79, 95, 133, 241, 333],
@@ -175,13 +175,21 @@ export class TravelInsuranceService {
         return 1; // Default adult 18–65
       };
 
+      // Reverse calculate base premium from total in table
+      const reverseBasePremium = (totalPremiumFromTable) => {
+        const stampDutyUSD = 0.5;
+        const taxRate = 0.16;
+        return (totalPremiumFromTable - stampDutyUSD) / (1 + taxRate);
+      };
+
       // Calculate total premium for all travelers
       let totalPremiumUSD = 0;
 
       // Principal traveler
       const principalAge = calcAge(dob);
-      const principalBasePremium =
+      const principalTablePremium =
         premiumTable[coverageType]["Individual"][index];
+      const principalBasePremium = reverseBasePremium(principalTablePremium);
       totalPremiumUSD +=
         principalBasePremium * getAgeMultiplier(principalAge, coverageType);
 
@@ -189,33 +197,32 @@ export class TravelInsuranceService {
       if (Array.isArray(otherTravellers) && otherTravellers.length > 0) {
         otherTravellers.forEach((trav) => {
           const age = calcAge(trav.dob);
-          const base = premiumTable[coverageType]["Individual"][index];
-          totalPremiumUSD += base * getAgeMultiplier(age, coverageType);
+          const tablePremium = premiumTable[coverageType]["Individual"][index];
+          const basePremium = reverseBasePremium(tablePremium);
+          totalPremiumUSD += basePremium * getAgeMultiplier(age, coverageType);
         });
       }
 
-      // Tax and charges
+      // Final price is simply baseTotal + tax + stamp duty (once)
+      const stampDutyUSD = 0.5;
       const taxRate = 0.16;
-      const stampDutyUSD = 2;
       const taxUSD = +(totalPremiumUSD * taxRate).toFixed(2);
-
-      const chargeForeign = {
-        tax: taxUSD,
-        stampDuty: stampDutyUSD,
-      };
 
       // Convert to KES
       const exchangeRate = 130;
       const premiumLocal = +(totalPremiumUSD * exchangeRate).toFixed(2);
 
+      const chargeForeign = {
+        tax: taxUSD.toFixed(2),
+        stampDuty: stampDutyUSD.toFixed(2),
+      };
       const chargeLocal = {
         tax: +(taxUSD * exchangeRate).toFixed(2),
         stampDuty: +(stampDutyUSD * exchangeRate).toFixed(2),
       };
 
-      // Return result
       return res.status(200).json({
-        premiumForeign: +totalPremiumUSD.toFixed(2),
+        premiumForeign: totalPremiumUSD,
         premiumLocal,
         charges: {
           chargeForeign,
