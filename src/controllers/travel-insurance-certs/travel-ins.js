@@ -76,162 +76,166 @@ export class TravelInsuranceService {
     }
   }
 
-  static calculatePremiums(req, res) {
-    try {
-      const { policyPayload } = req.body;
-      const { duration, otherTravellers, policyProductCode, dob, tripType } =
-        policyPayload.policyDetails;
+  static calculatePremiumsInternal(policyDetails) {
+    const { duration, otherTravellers, policyProductCode, dob, tripType } =
+      policyDetails;
 
-      // Map cover codes to coverage names
-      const coverageMap = {
-        140: "BUDGET",
-        141: "SCHENGEN",
-        142: "GLOBAL_BASIC",
-        143: "GLOBAL_PLUS",
-        144: "GLOBAL_EXTRA",
-      };
+    const coverageMap = {
+      140: "BUDGET",
+      141: "SCHENGEN",
+      142: "GLOBAL_BASIC",
+      143: "GLOBAL_PLUS",
+      144: "GLOBAL_EXTRA",
+    };
 
-      const coverageType = coverageMap[policyProductCode];
-      if (!coverageType) {
-        return res.status(400).json({ error: "Invalid cover code" });
+    const coverageType = coverageMap[policyProductCode];
+    if (!coverageType) {
+      throw new Error("Invalid cover code");
+    }
+
+    // Premium table (USD)
+    const premiumTable = {
+      BUDGET: {
+        Individual: [12, 16, 22, 24, 25, 39, 60, 79, 95, 133, 241, 333],
+      },
+      SCHENGEN: {
+        Individual: [13, 17, 24, 25, 27, 34, 66, 85, 101, 129, 191, 265],
+      },
+      GLOBAL_BASIC: {
+        Individual: [19, 22, 31, 34, 37, 48, 84, 108, 163, 209, 316, 438],
+      },
+      GLOBAL_PLUS: {
+        Individual: [23, 30, 37, 40, 42, 61, 99, 128, 207, 265, 401, 556],
+      },
+      GLOBAL_EXTRA: {
+        Individual: [26, 35, 42, 43, 48, 70, 111, 144, 237, 305, 461, 639],
+      },
+    };
+
+    // Duration brackets mapping
+    const durationBrackets = [
+      { max: 4 }, // index 0
+      { max: 7 },
+      { max: 10 },
+      { max: 15 },
+      { max: 21 },
+      { max: 30 },
+      { max: 60 },
+      { max: 90 },
+      { max: 180, type: "MULTI_TRIP" }, // index 8
+      { max: 365, type: "MULTI_TRIP" }, // index 9
+      { max: 180, type: "CONTINUOUS" }, // index 10
+      { max: 365, type: "CONTINUOUS" }, // index 11
+    ];
+
+    // Pick correct index based on duration and tripType
+    let index = durationBrackets.findIndex((b) => {
+      if (b.type) {
+        return b.max >= duration && tripType === b.type;
       }
+      return b.max >= duration && !b.type;
+    });
 
-      // Premium table (FINAL total USD including 0.50 USD stamp duty + 16% VAT)
-      const premiumTable = {
-        BUDGET: {
-          Individual: [12, 16, 22, 24, 25, 39, 60, 79, 95, 133, 241, 333],
-          Family: [28, 37, 51, 55, 58, 90, 137, 183, 220, 305, 553, 767],
-        },
-        SCHENGEN: {
-          Individual: [13, 17, 24, 25, 27, 34, 66, 85, 101, 129, 191, 265],
-          Family: [29, 39, 55, 57, 60, 77, 149, 192, 229, 293, 434, 603],
-        },
-        GLOBAL_BASIC: {
-          Individual: [19, 22, 31, 34, 37, 48, 84, 108, 163, 209, 316, 438],
-          Family: [43, 51, 72, 77, 84, 111, 192, 248, 375, 481, 727, 1008],
-        },
-        GLOBAL_PLUS: {
-          Individual: [23, 30, 37, 40, 42, 61, 99, 128, 207, 265, 401, 556],
-          Family: [53, 70, 85, 91, 96, 140, 228, 294, 475, 611, 923, 1279],
-        },
-        GLOBAL_EXTRA: {
-          Individual: [26, 35, 42, 43, 48, 70, 111, 144, 237, 305, 461, 639],
-          Family: [60, 80, 97, 98, 110, 161, 256, 331, 546, 701, 1060, 1469],
-        },
-      };
+    if (index === -1) {
+      throw new Error("Duration not supported");
+    }
 
-      // Duration brackets mapping (indexes correspond to premiumTable arrays)
-      const durationBrackets = [
-        4, // index 0
-        7, // index 1
-        10, // index 2
-        15, // index 3
-        21, // index 4
-        30, // index 5
-        60, // index 6
-        90, // index 7
-        180, // index 8 (multi-trip: max 92 days each)
-        365, // index 9 (multi-trip annual)
-        180, // index 10 (continuous trip)
-        365, // index 11 (continuous annual)
-      ];
-
-      // Special handling for 180/365 cases
-      let index;
-      if (duration > 90) {
-        if (tripType === "MULTI_TRIP") {
-          if (duration <= 180) index = 8;
-          else if (duration <= 365) index = 9;
-        } else if (tripType === "CONTINUOUS") {
-          if (duration <= 180) index = 10;
-          else if (duration <= 365) index = 11;
-        }
-      } else {
-        index = durationBrackets.findIndex((max) => duration <= max);
+    // Calculate age
+    const calcAge = (dobStr) => {
+      const birthDate = new Date(dobStr);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
       }
+      return age;
+    };
 
-      if (index === undefined || index === -1) {
-        return res.status(400).json({ error: "Duration not supported" });
-      }
+    // Age multiplier rules
+    const getAgeMultiplier = (age, coverageType) => {
+      if (age < 18) return 0.5;
+      if (age >= 66 && age <= 75) return 1.5;
+      if (age >= 76 && age <= 80) return 2;
+      if (age >= 81 && coverageType === "SCHENGEN") return 4;
+      return 1;
+    };
 
-      // Function to calculate age
-      const calcAge = (dobStr) => {
-        const birthDate = new Date(dobStr);
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-          age--;
-        }
-        return age;
-      };
+    // Calculate total premium
+    let totalPremiumUSD = 0;
+    const principalAge = calcAge(dob);
+    const principalPremium = premiumTable[coverageType].Individual[index];
+    totalPremiumUSD +=
+      principalPremium * getAgeMultiplier(principalAge, coverageType);
 
-      // Function to get age multiplier
-      const getAgeMultiplier = (age, coverageType) => {
-        if (age < 18) return 0.5; // Children
-        if (age >= 66 && age <= 75) return 1.5;
-        if (age >= 76 && age <= 80) return 2;
-        if (age >= 81 && coverageType === "SCHENGEN") return 4;
-        return 1; // Default adult 18–65
-      };
+    if (Array.isArray(otherTravellers) && otherTravellers.length > 0) {
+      otherTravellers.forEach((trav) => {
+        const age = calcAge(trav.dob);
+        totalPremiumUSD +=
+          premiumTable[coverageType].Individual[index] *
+          getAgeMultiplier(age, coverageType);
+      });
+    }
 
-      // Reverse calculate base premium from total in table
-      const reverseBasePremium = (totalPremiumFromTable) => {
-        const stampDutyUSD = 0.5;
-        const taxRate = 0.16;
-        return (totalPremiumFromTable - stampDutyUSD) / (1 + taxRate);
-      };
-
-      // Calculate total premium for all travelers
-      let totalPremiumUSD = 0;
-
-      // Principal traveler
-      const principalAge = calcAge(dob);
-      const principalTablePremium =
-        premiumTable[coverageType]["Individual"][index];
-      const principalBasePremium = reverseBasePremium(principalTablePremium);
-      totalPremiumUSD +=
-        principalBasePremium * getAgeMultiplier(principalAge, coverageType);
-
-      // Additional travelers
-      if (Array.isArray(otherTravellers) && otherTravellers.length > 0) {
-        otherTravellers.forEach((trav) => {
-          const age = calcAge(trav.dob);
-          const tablePremium = premiumTable[coverageType]["Individual"][index];
-          const basePremium = reverseBasePremium(tablePremium);
-          totalPremiumUSD += basePremium * getAgeMultiplier(age, coverageType);
-        });
-      }
-
-      // Final price is simply baseTotal + tax + stamp duty (once)
+    // Reverse calculate base premium from total in table
+    const reverseBasePremium = (totalPremiumFromTable) => {
       const stampDutyUSD = 0.5;
       const taxRate = 0.16;
-      const taxUSD = +(totalPremiumUSD * taxRate).toFixed(2);
+      return (totalPremiumFromTable - stampDutyUSD) / (1 + taxRate);
+    };
 
-      // Convert to KES
-      const exchangeRate = 130;
-      const premiumLocal = +(totalPremiumUSD * exchangeRate).toFixed(2);
+    // Final price is simply baseTotal + tax + stamp duty (once)
+    const stampDutyUSD = 0.5;
+    const taxRate = 0.16;
+    const taxUSD = +(totalPremiumUSD * taxRate).toFixed(2);
 
-      const chargeForeign = {
-        tax: taxUSD.toFixed(2),
-        stampDuty: stampDutyUSD.toFixed(2),
-      };
-      const chargeLocal = {
-        tax: +(taxUSD * exchangeRate).toFixed(2),
-        stampDuty: +(stampDutyUSD * exchangeRate).toFixed(2),
-      };
+    // Convert to KES
+    const exchangeRate = 130;
+    const premiumLocal = +(totalPremiumUSD * exchangeRate).toFixed(2);
 
-      return res.status(200).json({
-        premiumForeign: totalPremiumUSD,
-        premiumLocal,
-        charges: {
-          chargeForeign,
-          chargeLocal,
-        },
+    const chargeForeign = {
+      tax: taxUSD.toFixed(2),
+      stampDuty: stampDutyUSD.toFixed(2),
+    };
+    const chargeLocal = {
+      tax: +(taxUSD * exchangeRate).toFixed(2),
+      stampDuty: +(stampDutyUSD * exchangeRate).toFixed(2),
+    };
+
+    return {
+      policyProductCode,
+      premiumForeign: +totalPremiumUSD.toFixed(2),
+      premiumLocal,
+      charges: {
+        chargeForeign,
+        chargeLocal,
+      },
+      exchangeRate,
+    };
+  }
+
+  static calculateAllPremiums(req, res) {
+    try {
+      const { policies } = req.body;
+      if (!Array.isArray(policies)) {
+        return res.status(400).json({ error: "Invalid policies format" });
+      }
+
+      const results = policies.map((policy) => {
+        try {
+          return this.calculatePremiumsInternal(policy.policyDetails);
+        } catch (err) {
+          return {
+            policyProductCode: policy.policyDetails.policyProductCode,
+            premiumForeign: null,
+          };
+        }
       });
+
+      return res.status(200).json({ premiums: results });
     } catch (error) {
       console.error(error);
-      return res.status(500).json({ error: "Error calculating premium" });
+      return res.status(500).json({ error: "Error calculating premiums" });
     }
   }
 }
