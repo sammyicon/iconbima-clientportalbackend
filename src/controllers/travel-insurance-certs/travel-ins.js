@@ -77,8 +77,15 @@ export class TravelInsuranceService {
   }
 
   static calculatePremiumsInternal(policyDetails) {
-    const { duration, otherTravellers, policyProductCode, dob, tripType } =
-      policyDetails;
+    const {
+      firstName,
+      passportNo,
+      duration,
+      otherTravellers,
+      policyProductCode,
+      dob,
+      tripType,
+    } = policyDetails;
 
     const coverageMap = {
       140: "BUDGET",
@@ -165,15 +172,37 @@ export class TravelInsuranceService {
     let totalPremiumUSD = 0;
     const principalAge = calcAge(dob);
     const principalPremium = premiumTable[coverageType].Individual[index];
-    totalPremiumUSD +=
-      principalPremium * getAgeMultiplier(principalAge, coverageType);
+    // totalPremiumUSD +=
+    //   principalPremium * getAgeMultiplier(principalAge, coverageType);
 
+    let breakdown = [];
+
+    const addTravellerPremium = (trav, label) => {
+      const age = calcAge(trav.dob);
+      const basePremium = premiumTable[coverageType].Individual[index];
+      const finalPremium = basePremium * getAgeMultiplier(age, coverageType);
+
+      breakdown.push({
+        name: trav.firstName || label,
+        passport: trav.passportNo || "N/A",
+        dob: trav.dob,
+        age,
+        premium: +finalPremium.toFixed(2),
+      });
+
+      return finalPremium;
+    };
+
+    // Principal
+    totalPremiumUSD += addTravellerPremium(
+      { firstName: firstName, passportNo: passportNo, dob },
+      "Principal"
+    );
+
+    // Other Travellers
     if (Array.isArray(otherTravellers) && otherTravellers.length > 0) {
-      otherTravellers.forEach((trav) => {
-        const age = calcAge(trav.dob);
-        totalPremiumUSD +=
-          premiumTable[coverageType].Individual[index] *
-          getAgeMultiplier(age, coverageType);
+      otherTravellers.forEach((trav, i) => {
+        totalPremiumUSD += addTravellerPremium(trav, `Traveller ${i + 1}`);
       });
     }
 
@@ -206,6 +235,7 @@ export class TravelInsuranceService {
       policyProductCode,
       premiumForeign: +totalPremiumUSD.toFixed(2),
       premiumLocal,
+      breakdown,
       charges: {
         chargeForeign,
         chargeLocal,
