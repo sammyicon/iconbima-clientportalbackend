@@ -1,6 +1,8 @@
+// src/routes/travelInsurance.service.js
 import pool from "../../config/oracledb-connect.js";
 
 export class TravelInsuranceService {
+  // ---------- unchanged ----------
   static async getTravelCertificates(req, res) {
     let connection;
     let results;
@@ -8,45 +10,36 @@ export class TravelInsuranceService {
       const { intermediaryCode, clientCode } = req.body;
       connection = (await pool).getConnection();
       console.log("Database is connected");
-      if (
-        intermediaryCode === "15" ||
-        intermediaryCode === "70" ||
-        intermediaryCode === "25"
-      ) {
+
+      if (["15", "70", "25"].includes(String(intermediaryCode))) {
         results = (await connection).execute(
           `SELECT pl_no,
-       pl_end_no,
-       PKG_SYSTEM_ADMIN.GET_ENTITY_NAME (pl_int_aent_code, pl_int_ent_code)
-           intermediary,
-       PKG_SYSTEM_ADMIN.GET_ENTITY_NAME (pl_assr_aent_code, pl_assr_ent_code)
-           insured,
-       pl_flex09
-           travel_cert_no,
-       pl_flex10
-           travel_cert_url
-  FROM uw_policy a, uw_policy_class
- WHERE     pl_org_code = pc_org_code
-       AND pl_index = pc_pl_index
-       AND pl_end_index = pc_end_index
-       AND pc_mc_code = '14'
-       AND pl_type = 'Normal'
-       AND pl_flex09 IS NOT NULL
-       AND pl_int_aent_code = :p_intermediary_aent_code
-       AND pl_int_ent_code = :p_intermediary_ent_code order by a.created_on desc`,
+                  pl_end_no,
+                  PKG_SYSTEM_ADMIN.GET_ENTITY_NAME (pl_int_aent_code, pl_int_ent_code) intermediary,
+                  PKG_SYSTEM_ADMIN.GET_ENTITY_NAME (pl_assr_aent_code, pl_assr_ent_code) insured,
+                  pl_flex09 travel_cert_no,
+                  pl_flex10 travel_cert_url
+             FROM uw_policy a, uw_policy_class
+            WHERE pl_org_code = pc_org_code
+              AND pl_index = pc_pl_index
+              AND pl_end_index = pc_end_index
+              AND pc_mc_code = '14'
+              AND pl_type = 'Normal'
+              AND pl_flex09 IS NOT NULL
+              AND pl_int_aent_code = :p_intermediary_aent_code
+              AND pl_int_ent_code = :p_intermediary_ent_code
+         ORDER BY a.created_on DESC`,
           {
             p_intermediary_aent_code: intermediaryCode,
             p_intermediary_ent_code: clientCode,
           }
         );
       } else {
-        res.json({
-          success: true,
-          results: [],
-        });
+        return res.json({ success: true, results: [] });
       }
 
-      if ((await results).rows && (await results).rows.length > 0) {
-        const formattedData = (await results).rows?.map((row) => ({
+      if ((await results).rows?.length) {
+        const formattedData = (await results).rows.map((row) => ({
           policyNo: row[0],
           endNo: row[1],
           intermediary: row[2],
@@ -54,10 +47,7 @@ export class TravelInsuranceService {
           travelCertNo: row[4],
           travelCertUrl: row[5],
         }));
-        res.json({
-          success: true,
-          results: formattedData,
-        });
+        return res.json({ success: true, results: formattedData });
       } else {
         return res.status(200).json({ success: false, results: [] });
       }
@@ -76,7 +66,92 @@ export class TravelInsuranceService {
     }
   }
 
-  static calculatePremiumsInternal(policyDetails) {
+  // ---------- helpers ----------
+  static resolveCoverageType(policyProductCode) {
+    // Robust mapping: supports number or string codes; supports underscores or spaces in DB
+    const code = Number(policyProductCode);
+    const map = {
+      140: ["BUDGET"],
+      141: ["SCHENGEN"],
+      142: ["GLOBAL BASIC", "GLOBAL_BASIC"],
+      143: ["GLOBAL PLUS", "GLOBAL_PLUS"],
+      144: ["GLOBAL EXTRA", "GLOBAL_EXTRA"],
+    };
+    const options = map[code];
+    if (!options) return null;
+    // Prefer the space version (first entry) as your DB seemed to accept e.g. "SCHENGEN" and "GLOBAL BASIC"
+    return options[0];
+  }
+
+  static calcAge(dobStr) {
+    // Accepts ISO or "dd-MMM-yyyy"
+    const d = new Date(dobStr);
+    if (Number.isNaN(d.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - d.getFullYear();
+    const m = today.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+    return age;
+  }
+
+  // ---------- DB ----------
+  static async fetchPremiumFromDB(
+    connection,
+    { age, days, coverType, currency, tripType }
+  ) {
+    if (age == null || days == null || !coverType) {
+      throw new Error("Missing required fields (age, days, coverType)");
+    }
+
+    const sql = `
+      SELECT ROUND(
+               TR_RATE
+               * NVL(
+                   (SELECT TR_RATE
+                      FROM tr_travel_rates
+                     WHERE TR_CATEGORY = 'Age'
+                       AND :p_age BETWEEN tr_from AND tr_to
+                       AND tr_cover_type = :p_cover_type),
+                   1
+                 )
+               * (CASE
+                    WHEN :p_currency = 'USD' THEN 1
+                    WHEN :p_currency = 'KSH' THEN (
+                      SELECT rate
+                        FROM gl_currency_rates
+                       WHERE rate_fm_cur_code = 'USD'
+                         AND RATE_TO_CUR_CODE = 'KSH'
+                         AND TRUNC(SYSDATE) BETWEEN TRUNC(RATE_FM_DATE) AND TRUNC(RATE_TO_DATE)
+                    )
+                  END)
+             , 2) AS total_premium
+        FROM tr_travel_rates
+       WHERE TR_CATEGORY = 'Days'
+         AND :p_days BETWEEN tr_from AND tr_to
+         AND tr_cover_type = :p_cover_type
+         AND tr_trip_type = NVL(:p_trip_type, 'SINGLE_TRIP')
+    `;
+
+    // Your DB columns are VARCHAR2, so bind as strings
+    const binds = {
+      p_age: String(age),
+      p_days: String(days),
+      p_cover_type: String(coverType),
+      p_currency: String(currency || "USD"),
+      p_trip_type: String(tripType || "SINGLE_TRIP"),
+    };
+
+    const result = await connection.execute(sql, binds);
+    if (result.rows?.length) {
+      return Number(result.rows[0][0]); // single number
+    }
+    throw new Error(
+      `No premium for age=${age}, days=${days}, coverType=${coverType}, tripType=${tripType}, currency=${currency}`
+    );
+  }
+
+  // ---------- business logic ----------
+  static async calculatePremiumsInternal(connection, policyDetails) {
     const {
       firstName,
       passportNo,
@@ -84,188 +159,118 @@ export class TravelInsuranceService {
       otherTravellers,
       policyProductCode,
       dob,
+      currency,
       tripType,
     } = policyDetails;
 
-    const coverageMap = {
-      140: "BUDGET",
-      141: "SCHENGEN",
-      142: "GLOBAL_BASIC",
-      143: "GLOBAL_PLUS",
-      144: "GLOBAL_EXTRA",
-    };
+    // Resolve cover type from product code
+    const coverageType = this.resolveCoverageType(policyProductCode);
+    if (!coverageType) throw new Error("Invalid cover code");
 
-    const coverageType = coverageMap[policyProductCode];
-    if (!coverageType) {
-      throw new Error("Invalid cover code");
-    }
+    const breakdown = [];
+    let total = 0;
 
-    // Premium table (USD)
-    const premiumTable = {
-      BUDGET: {
-        Individual: [12, 16, 22, 24, 25, 39, 60, 79, 95, 133, 241, 333],
-      },
-      SCHENGEN: {
-        Individual: [13, 17, 24, 25, 27, 34, 66, 85, 101, 129, 191, 265],
-      },
-      GLOBAL_BASIC: {
-        Individual: [19, 22, 31, 34, 37, 48, 84, 108, 163, 209, 316, 438],
-      },
-      GLOBAL_PLUS: {
-        Individual: [23, 30, 37, 40, 42, 61, 99, 128, 207, 265, 401, 556],
-      },
-      GLOBAL_EXTRA: {
-        Individual: [26, 35, 42, 43, 48, 70, 111, 144, 237, 305, 461, 639],
-      },
-    };
-
-    // Duration brackets mapping
-    const durationBrackets = [
-      { max: 4 }, // index 0
-      { max: 7 },
-      { max: 10 },
-      { max: 15 },
-      { max: 21 },
-      { max: 30 },
-      { max: 60 },
-      { max: 90 },
-      { max: 180, type: "MULTI_TRIP" }, // index 8
-      { max: 365, type: "MULTI_TRIP" }, // index 9
-      { max: 180, type: "CONTINUOUS" }, // index 10
-      { max: 365, type: "CONTINUOUS" }, // index 11
-    ];
-
-    // Pick correct index based on duration and tripType
-    let index = durationBrackets.findIndex((b) => {
-      if (b.type) {
-        return b.max >= duration && tripType === b.type;
+    const addTravellerPremium = async (trav, label) => {
+      const age = this.calcAge(trav.dob);
+      if (age == null || age < 0) {
+        // Skip obviously invalid DOBs rather than crashing
+        breakdown.push({
+          name: trav.firstName || label,
+          passport: trav.passportNo || "N/A",
+          dob: trav.dob,
+          age: null,
+          premium: 0,
+          error: "Invalid DOB",
+        });
+        return 0;
       }
-      return b.max >= duration && !b.type;
-    });
 
-    if (index === -1) {
-      throw new Error("Duration not supported");
-    }
-
-    // Calculate age
-    const calcAge = (dobStr) => {
-      const birthDate = new Date(dobStr);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-      return age;
-    };
-
-    // Age multiplier rules
-    const getAgeMultiplier = (age, coverageType) => {
-      if (age < 18) return 0.5;
-      if (age >= 66 && age <= 75) return 1.5;
-      if (age >= 76 && age <= 80) return 2;
-      if (age >= 81 && coverageType === "SCHENGEN") return 4;
-      return 1;
-    };
-
-    // Calculate total premium
-    let totalPremiumUSD = 0;
-    const principalAge = calcAge(dob);
-    const principalPremium = premiumTable[coverageType].Individual[index];
-    // totalPremiumUSD +=
-    //   principalPremium * getAgeMultiplier(principalAge, coverageType);
-
-    let breakdown = [];
-
-    const addTravellerPremium = (trav, label) => {
-      const age = calcAge(trav.dob);
-      const basePremium = premiumTable[coverageType].Individual[index];
-      const finalPremium = basePremium * getAgeMultiplier(age, coverageType);
+      const p = await this.fetchPremiumFromDB(connection, {
+        age,
+        days: duration,
+        coverType: coverageType,
+        currency,
+        tripType,
+      });
 
       breakdown.push({
         name: trav.firstName || label,
         passport: trav.passportNo || "N/A",
         dob: trav.dob,
         age,
-        premium: +finalPremium.toFixed(2),
+        premium: +Number(p).toFixed(2),
       });
-
-      return finalPremium;
+      return Number(p);
     };
 
     // Principal
-    totalPremiumUSD += addTravellerPremium(
-      { firstName: firstName, passportNo: passportNo, dob },
+    total += await addTravellerPremium(
+      { firstName, passportNo, dob },
       "Principal"
     );
 
-    // Other Travellers
-    if (Array.isArray(otherTravellers) && otherTravellers.length > 0) {
-      otherTravellers.forEach((trav, i) => {
-        totalPremiumUSD += addTravellerPremium(trav, `Traveller ${i + 1}`);
-      });
+    // Others — handle safely if it's not an array
+    if (Array.isArray(otherTravellers) && otherTravellers.length) {
+      for (let i = 0; i < otherTravellers.length; i++) {
+        total += await addTravellerPremium(
+          otherTravellers[i],
+          `Traveller ${i + 1}`
+        );
+      }
     }
 
-    // Reverse calculate base premium from total in table
-    const reverseBasePremium = (totalPremiumFromTable) => {
-      const stampDutyUSD = 0.5;
-      const taxRate = 0.16;
-      return (totalPremiumFromTable - stampDutyUSD) / (1 + taxRate);
-    };
-
-    // Final price is simply baseTotal + tax + stamp duty (once)
-    const stampDutyUSD = 0.5;
-    const taxRate = 0.16;
-    const taxUSD = +(totalPremiumUSD * taxRate).toFixed(2);
-
-    // Convert to KES
-    const exchangeRate = 130;
-    const premiumLocal = +(totalPremiumUSD * exchangeRate).toFixed(2);
-
-    const chargeForeign = {
-      tax: taxUSD.toFixed(2),
-      stampDuty: stampDutyUSD.toFixed(2),
-    };
-    const chargeLocal = {
-      tax: +(taxUSD * exchangeRate).toFixed(2),
-      stampDuty: +(stampDutyUSD * exchangeRate).toFixed(2),
-    };
-
     return {
-      policyProductCode,
-      premiumForeign: +totalPremiumUSD.toFixed(2),
-      premiumLocal,
+      policyProductCode: Number(policyProductCode),
+      premiumForeign: +Number(total).toFixed(2), // name kept for compatibility with your FE
+      currency, // helpful to keep
       breakdown,
-      charges: {
-        chargeForeign,
-        chargeLocal,
-      },
-      exchangeRate,
     };
   }
 
-  static calculateAllPremiums(req, res) {
+  // ---------- controller ----------
+  static async calculateAllPremiums(req, res) {
+    let connection;
     try {
       const { policies } = req.body;
-      if (!Array.isArray(policies)) {
-        return res.status(400).json({ error: "Invalid policies format" });
+      if (!policies || !Array.isArray(policies)) {
+        return res.status(400).json({ error: "Missing or invalid policies" });
       }
 
-      const results = policies.map((policy) => {
+      connection = await (await pool).getConnection();
+
+      const results = [];
+      for (const policy of policies) {
         try {
-          return this.calculatePremiumsInternal(policy.policyDetails);
+          const premium = await this.calculatePremiumsInternal(
+            connection,
+            policy.policyDetails
+          );
+          results.push({
+            policyProductCode: premium.policyProductCode,
+            premiumForeign: premium.premiumForeign,
+            currency: premium.currency,
+            breakdown: premium.breakdown,
+          });
         } catch (err) {
-          return {
-            policyProductCode: policy.policyDetails.policyProductCode,
+          console.error(
+            `Error for policyProductCode ${policy?.policyDetails?.policyProductCode}:`,
+            err.message
+          );
+          results.push({
+            policyProductCode: Number(policy?.policyDetails?.policyProductCode),
             premiumForeign: null,
-          };
+            currency: policy?.policyDetails?.currency || "USD",
+            breakdown: [],
+          });
         }
-      });
+      }
 
       return res.status(200).json({ premiums: results });
     } catch (error) {
-      console.error(error);
+      console.error("Error in calculateAllPremiums:", error);
       return res.status(500).json({ error: "Error calculating premiums" });
+    } finally {
+      if (connection) await connection.close();
     }
   }
 }
