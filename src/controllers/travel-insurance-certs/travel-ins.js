@@ -2,7 +2,6 @@
 import pool from "../../config/oracledb-connect.js";
 
 export class TravelInsuranceService {
-  // ---------- unchanged ----------
   static async getTravelCertificates(req, res) {
     let connection;
     let results;
@@ -66,9 +65,7 @@ export class TravelInsuranceService {
     }
   }
 
-  // ---------- helpers ----------
   static resolveCoverageType(policyProductCode) {
-    // Robust mapping: supports number or string codes; supports underscores or spaces in DB
     const code = Number(policyProductCode);
     const map = {
       140: ["BUDGET"],
@@ -79,12 +76,10 @@ export class TravelInsuranceService {
     };
     const options = map[code];
     if (!options) return null;
-    // Prefer the space version (first entry) as your DB seemed to accept e.g. "SCHENGEN" and "GLOBAL BASIC"
     return options[0];
   }
 
   static calcAge(dobStr) {
-    // Accepts ISO or "dd-MMM-yyyy"
     const d = new Date(dobStr);
     if (Number.isNaN(d.getTime())) return null;
     const today = new Date();
@@ -94,7 +89,6 @@ export class TravelInsuranceService {
     return age;
   }
 
-  // ---------- DB ----------
   static async fetchPremiumFromDB(
     connection,
     { age, days, coverType, currency, tripType }
@@ -132,7 +126,6 @@ export class TravelInsuranceService {
          AND tr_trip_type = NVL(:p_trip_type, 'SINGLE_TRIP')
     `;
 
-    // Your DB columns are VARCHAR2, so bind as strings
     const binds = {
       p_age: String(age),
       p_days: String(days),
@@ -143,14 +136,13 @@ export class TravelInsuranceService {
 
     const result = await connection.execute(sql, binds);
     if (result.rows?.length) {
-      return Number(result.rows[0][0]); // single number
+      return Number(result.rows[0][0]);
     }
     throw new Error(
       `No premium for age=${age}, days=${days}, coverType=${coverType}, tripType=${tripType}, currency=${currency}`
     );
   }
 
-  // ---------- business logic ----------
   static async calculatePremiumsInternal(connection, policyDetails) {
     const {
       firstName,
@@ -163,7 +155,6 @@ export class TravelInsuranceService {
       tripType,
     } = policyDetails;
 
-    // Resolve cover type from product code
     const coverageType = this.resolveCoverageType(policyProductCode);
     if (!coverageType) throw new Error("Invalid cover code");
 
@@ -173,7 +164,6 @@ export class TravelInsuranceService {
     const addTravellerPremium = async (trav, label) => {
       const age = this.calcAge(trav.dob);
       if (age == null || age < 0) {
-        // Skip obviously invalid DOBs rather than crashing
         breakdown.push({
           name: trav.firstName || label,
           passport: trav.passportNo || "N/A",
@@ -203,13 +193,11 @@ export class TravelInsuranceService {
       return Number(p);
     };
 
-    // Principal
     total += await addTravellerPremium(
       { firstName, passportNo, dob },
       "Principal"
     );
 
-    // Others — handle safely if it's not an array
     if (Array.isArray(otherTravellers) && otherTravellers.length) {
       for (let i = 0; i < otherTravellers.length; i++) {
         total += await addTravellerPremium(
@@ -221,13 +209,12 @@ export class TravelInsuranceService {
 
     return {
       policyProductCode: Number(policyProductCode),
-      premiumForeign: +Number(total).toFixed(2), // name kept for compatibility with your FE
-      currency, // helpful to keep
+      premiumForeign: +Number(total).toFixed(2),
+      currency,
       breakdown,
     };
   }
 
-  // ---------- controller ----------
   static async calculateAllPremiums(req, res) {
     let connection;
     try {
